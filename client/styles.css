@@ -1,0 +1,72 @@
+body {
+    background-color: navy;
+    margin: 0;
+    font-family: 'Arial', serif;
+}
+
+h1 {
+    margin-top:0;
+}
+
+#avatarPicker {
+    text-align: center;
+}
+
+#content {
+    background-color: white;
+    width: 1000px;
+    margin: 0 auto;
+    min-height: 600px;
+    padding: 32px;
+}
+
+#pickerInputDiv {
+    display: inline;
+}
+
+#avatarName {
+    border: 5px solid silver;
+    margin: 24px;
+    padding: 8px;
+    font-size: 32px;
+    height: 64px;
+    width: 300px;
+}
+
+#avatarName:hover {
+    border: 5px solid grey;
+}
+
+#joinButton {
+    padding: 16px;
+    font-size: 32px;
+    height: 88px;
+    width: 150px;
+    border: none;
+    background-color: silver;
+    border: 5px solid silver;
+}
+
+#joinButton:hover {
+    border: 5px solid grey;
+}
+
+.avatar {
+    border: 5px solid silver;
+    margin: 5px;
+    padding: 5px;
+    vertical-align:bottom;
+}
+
+.avatar:hover {
+    border: 5px solid grey;
+}
+
+.selectedAvatar {
+    border: 5px solid blue;
+    background-color: cyan;
+}
+
+.selectedAvatar:hover {
+    border: 5px solid navy;
+}
