@@ -1,4 +1,7 @@
 let selectedAvatar;
+let pressedKeys = {};
+
+let avatars = [];
 
 function pageLoad() {
 
@@ -29,6 +32,7 @@ function pageLoad() {
     let joinButton = document.getElementById("joinButton");
     let avatarCanvas = document.getElementById("avatarCanvas");
     joinButton.addEventListener("click", () => {
+        if (selectedAvatar === undefined) return;
         pickerDiv.style.display = "none";
         avatarCanvas.style.display = "block";
         avatarCanvas.width = 1000;
@@ -38,6 +42,9 @@ function pageLoad() {
         joinGame();
 
     });
+
+    window.addEventListener("keydown", event => pressedKeys[event.key] = true);
+    window.addEventListener("keyup", event => pressedKeys[event.key] = false);
 
 }
 
@@ -56,34 +63,63 @@ function joinGame() {
 
     window.requestAnimationFrame(gameFrame);
 
+    myX = Math.floor(Math.random() * 1000);
+    myY = Math.floor(Math.random() * 750);
+
 }
 
 let clientStartTime;
-let clientJoinTime;
+let serverJoinTime;
 let clientTime;
 let serverTime;
 
+let myX;
+let myY;
+let myId;
 
 function gameFrame(frameTime) {
 
     clientTime = Math.floor(frameTime);
 
-    if (clientJoinTime !== undefined) {
+    if (serverJoinTime !== undefined) {
 
       if (clientStartTime === undefined) clientStartTime = clientTime;
 
-      let x = 100;
-      let y = 200;
+      let serverClientTimeDif = (clientTime - clientStartTime) - (serverTime - serverJoinTime);
 
-      let canvas = document.getElementById("avatarCanvas");
-      let context = canvas.getContext("2d");
-      let image = document.getElementById("avatar1");
+    }
 
-      context.drawImage(image, x, y);
+    let lastX = myX;
+    let lastY = myY;
 
-      console.log(`(${clientTime} - ${clientStartTime}) = ${(clientTime - clientStartTime)}`);
-      console.log(`(${serverTime} - ${clientJoinTime}) =  ${(serverTime - clientJoinTime)}`);
+    if (pressedKeys["ArrowUp"]) {
+        myY -= 10;
+    }
+    if (pressedKeys["ArrowDown"]) {
+        myY += 10;
+    }
+    if (pressedKeys["ArrowLeft"]) {
+        myX -= 10;
+    }
+    if (pressedKeys["ArrowRight"]) {
+        myX += 10;
+    }
 
+    if (lastX != myX || lastY != myY) {
+        sendMessage(`{"x":${myX}, "y":${myY}}`);
+    }
+
+    let canvas = document.getElementById("avatarCanvas");
+    let context = canvas.getContext("2d");
+
+    context.clearRect(0,0,1000,750);
+
+    context.drawImage(selectedAvatar, myX, myY);
+
+    for (let avatar of avatars) {
+        if (avatar.id != myId && avatar.image != null) {
+            context.drawImage(avatar.image, avatar.x, avatar.y);
+        }
     }
 
     window.requestAnimationFrame(gameFrame);
@@ -99,10 +135,46 @@ function sendMessage(message) {
 
 function receiveMessage(event) {
 
-    let payload = JSON.parse(event.data);
+    let data = JSON.parse(event.data);
 
-    serverTime = payload.serverTime;
+    if (data.hasOwnProperty("you")) {
+        myId = data.you;
+        console.log("Connected and given id of " + myId);
 
-    if (clientJoinTime === undefined) clientJoinTime = serverTime;
+        sendMessage(`{"x":${myX}, "y":${myY}, "image": "${selectedAvatar.id}"}`);
+
+    }
+
+    if (data.hasOwnProperty("serverTime")) {
+        serverTime = data.serverTime;
+        if (serverJoinTime === undefined) serverJoinTime = serverTime;
+    }
+
+    if (data.hasOwnProperty("id") && data.id != myId) {
+
+        console.log(event.data);
+
+        let newAvatar = true;
+        for (let avatar of avatars) {
+            if (avatar.id == data.id) {
+                newAvatar = false;
+                break;
+            }
+        }
+        if (newAvatar) avatars.push({id: data.id});
+
+
+        for (let avatar of avatars) {
+            if (avatar.id == data.id) {
+                if (data.hasOwnProperty("x")) avatar.x = data.x;
+                if (data.hasOwnProperty("y")) avatar.y = data.y;
+                if (data.hasOwnProperty("image")) {
+                    console.log("...." + data.image);
+                    avatar.image = document.getElementById(data.image);
+                }
+            }
+        }
+
+    }
 
 }
