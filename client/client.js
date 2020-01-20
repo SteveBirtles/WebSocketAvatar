@@ -58,23 +58,33 @@ function joinGame() {
 
 }
 
-let startTime;
+let clientStartTime;
+let clientJoinTime;
+let clientTime;
+let serverTime;
+
 
 function gameFrame(frameTime) {
 
-    if (startTime === undefined) startTime = frameTime;
+    clientTime = Math.floor(frameTime);
 
-    console.log(Math.floor(frameTime - startTime));
+    if (clientJoinTime !== undefined) {
 
-    let x = Math.random() * 1000;
-    let y = Math.random() * 750;
-    let i = Math.floor(Math.random() * 43) + 1;
+      if (clientStartTime === undefined) clientStartTime = clientTime;
 
-    let canvas = document.getElementById("avatarCanvas");
-    let context = canvas.getContext("2d");
-    let image = document.getElementById("avatar" + i);
+      let x = 100;
+      let y = 200;
 
-    context.drawImage(image, x, y);
+      let canvas = document.getElementById("avatarCanvas");
+      let context = canvas.getContext("2d");
+      let image = document.getElementById("avatar1");
+
+      context.drawImage(image, x, y);
+
+      console.log(`(${clientTime} - ${clientStartTime}) = ${(clientTime - clientStartTime)}`);
+      console.log(`(${serverTime} - ${clientJoinTime}) =  ${(serverTime - clientJoinTime)}`);
+
+    }
 
     window.requestAnimationFrame(gameFrame);
 
@@ -86,8 +96,13 @@ function sendMessage(message) {
 
 }
 
+
 function receiveMessage(event) {
 
-    console.log(event.data);
+    let payload = JSON.parse(event.data);
+
+    serverTime = payload.serverTime;
+
+    if (clientJoinTime === undefined) clientJoinTime = serverTime;
 
 }
