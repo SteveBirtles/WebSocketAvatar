@@ -21,7 +21,8 @@ server.listen(port, function(){
 
     if (wsServer.clients.length === 0) return;
 
-    let broadcast = `{"serverTime" : ${Date.now() - serverStartTime}}`;
+    let timeData = {serverTime : Date.now() - serverStartTime};
+    let broadcast = JSON.stringify(timeData);
     for (let c of wsServer.clients) {
         c.send(broadcast);
     }
@@ -44,12 +45,13 @@ wsServer.on('connection', client => {
 
     console.log(`Client ${client.id} connected!`);
 
-    client.send(`{"you":${client.id}, "serverTime" : ${Date.now() - serverStartTime}}`);
+    let newClientData = {you: client.id, serverTime: Date.now() - serverStartTime};
+    client.send(JSON.stringify(newClientData));
 
     for (let id of Object.keys(avatars)) {
         sendAvatar(id, [client]);
     }
-    avatars[client.id] = {x: 0, y: 0, t: 0, chat: "", chattime: 0};
+    avatars[client.id] = {id: client.id, x: 0, y: 0, t: 0, chat: "", chattime: 0};
 
     client.on('message', message => {
 
@@ -73,8 +75,9 @@ wsServer.on('connection', client => {
 
         console.log(`Client ${client.id} disconnected!`);
 
+        let deleteData = {delete: client.id};
         for (let c of wsServer.clients) {
-            c.send(`{"delete": ${client.id}}`);
+            c.send(JSON.stringify(deleteData));
         }
         delete avatars[client.id];
     });
@@ -83,7 +86,7 @@ wsServer.on('connection', client => {
 });
 
 function sendAvatar(id, clients) {
-    let broadcast = `{"id": ${id}, "x": ${avatars[id].x}, "y": ${avatars[id].y}, "t": ${avatars[id].t}, "image": "${avatars[id].image}", "chat": "${avatars[id].chat}", "chattime": ${avatars[id].chattime}, "name": "${avatars[id].name}"}`;
+    let broadcast = JSON.stringify(avatars[id]);
     for (let c of clients) {
         c.send(broadcast);
     }

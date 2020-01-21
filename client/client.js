@@ -17,10 +17,10 @@ function pageLoad() {
         pickerHTML += `<img src="/client/avatars/${i}.png" id="avatar${i}" class="avatar">`;
     }
 
-    pickerHTML += `<div id="pickerInputDiv">`
-    pickerHTML += `<input type="text" placeholder="Your name" id="avatarName"></input>`
-    pickerHTML += `<button id="joinButton">Join</button>`;
-    pickerHTML += `</div>`
+    pickerHTML += '<div id="pickerInputDiv">';
+    pickerHTML += '<input type="text" placeholder="Your name" id="avatarName"></input>';
+    pickerHTML += '<button id="joinButton">Join</button>';
+    pickerHTML += '</div>';
 
     pickerDiv.innerHTML = pickerHTML;
 
@@ -36,8 +36,14 @@ function pageLoad() {
     let joinButton = document.getElementById("joinButton");
 
     joinButton.addEventListener("click", () => {
-        if (selectedAvatar === undefined) return;
-        if (document.getElementById("avatarName").value.trim == "") return;
+        if (selectedAvatar === undefined) {
+          alert("Please pick an avatar!");
+          return;
+        }
+        if (document.getElementById("avatarName").value.trim() == "") {
+          alert("Please choose a name!");
+          return;
+        }
         pickerDiv.style.display = "none";
         document.getElementById("canvasDiv").style.display = "block";
         joinGame();
@@ -54,8 +60,8 @@ function pageLoad() {
 function chat(event) {
 
     if (event.key == "Enter" && event.target.value != "") {
-
-        sendMessage(`{"chat": "${event.target.value}", "chattime": ${worldTime + chatLifespan}}`);
+        let chatData = {chat: event.target.value, chattime: worldTime + chatLifespan}
+        sendMessage(JSON.stringify(chatData));
 
         event.target.value = "";
         document.getElementById("chat").style.display = "none";
@@ -99,7 +105,8 @@ function gameFrame(frameTime) {
 
     if (myId !== undefined && avatars[myId] !== undefined) {
 
-        if (avatars[myId].currentX === avatars[myId].targetX && avatars[myId].currentY === avatars[myId].targetY) {
+        if (avatars[myId].currentX === avatars[myId].targetX &&
+              avatars[myId].currentY === avatars[myId].targetY) {
 
             let moved = false;
 
@@ -127,12 +134,18 @@ function gameFrame(frameTime) {
                     moved = true;
                 }
                 if (moved) {
+
                     avatars[myId].targetT = worldTime + moveTime;
                     avatars[myId].lastT = worldTime;
-                    sendMessage(`{"x":${avatars[myId].targetX}, "y":${avatars[myId].targetY}, "t":${avatars[myId].targetT}}`);
+
+                    let data = {x: avatars[myId].targetX,
+                                y: avatars[myId].targetY,
+                                t: avatars[myId].targetT}
+
+                    sendMessage(JSON.stringify(data));
+
                 }
             }
-
 
         }
 
@@ -143,10 +156,29 @@ function gameFrame(frameTime) {
 
     context.clearRect(0,0,1024,768);
 
+    context.strokeStyle = 'grey';
+
+    for (let i = 32; i < 1024; i += 64) {
+      context.beginPath();
+      context.moveTo(i, 0);
+      context.lineTo(i, 768);
+      context.stroke();
+    }
+
+    for (let i = 16; i < 768; i += 32) {
+      context.beginPath();
+      context.moveTo(0, i);
+      context.lineTo(1024, i);
+      context.stroke();
+    }
+
+
     for (let id of Object.keys(avatars)) {
         let avatar = avatars[id];
 
-        if (worldTime >= avatar.targetT && (avatar.currentX != avatar.targetX || avatar.currentY != avatar.targetY)) {
+        if (worldTime >= avatar.targetT &&
+            (avatar.currentX != avatar.targetX ||
+              avatar.currentY != avatar.targetY)) {
 
             avatar.currentX = avatar.targetX;
             avatar.currentY = avatar.targetY;
@@ -163,20 +195,29 @@ function gameFrame(frameTime) {
         }
 
         if (avatar.image !== undefined && avatar.image !== null && avatar.image !== "") {
-            context.drawImage(avatar.image, Math.floor(avatar.currentX*64-32), Math.floor(avatar.currentY*64-96));
+
+            context.drawImage(avatar.image,
+                  Math.floor(avatar.currentX*64-32), Math.floor(avatar.currentY*64-96));
+
         }
 
 
         if (avatar.chattime !== undefined && avatar.chattime > worldTime) {
+
             context.fillStyle = 'blue';
             context.font = '24px Arial';
             context.textAlign = 'center';
-            context.fillText(avatar.name + ": " + avatar.chat, Math.floor(avatar.currentX*64), Math.floor(avatar.currentY*64-96));
+            context.fillText(avatar.name + ": " + avatar.chat,
+                  Math.floor(avatar.currentX*64), Math.floor(avatar.currentY*64-96));
+
         } else if (avatar.name !== undefined ) {
+
             context.fillStyle = 'grey';
             context.font = '24px Arial';
             context.textAlign = 'center';
-            context.fillText(avatar.name, Math.floor(avatar.currentX*64), Math.floor(avatar.currentY*64-96));
+            context.fillText(avatar.name,
+                  Math.floor(avatar.currentX*64), Math.floor(avatar.currentY*64-96));
+
         }
 
     }
@@ -209,10 +250,13 @@ function receiveMessage(event) {
         myId = data.you;
         console.log("Connected and given id of " + myId);
 
-        let x = Math.floor(Math.random() * 16);
-        let y = Math.floor(Math.random() * 12);
-        let name = document.getElementById("avatarName").value;
-        sendMessage(`{"x":${x}, "y":${y}, "t":${0}, "image": "${selectedAvatar.id}", "name": "${name}"}`);
+        let newAvatar = {x: Math.floor(Math.random() * 16),
+                         y: Math.floor(Math.random() * 12),
+                         t: 0,
+                         image: selectedAvatar.id,
+                         name: document.getElementById("avatarName").value};
+
+        sendMessage(JSON.stringify(newAvatar));
 
     }
 
@@ -236,7 +280,9 @@ function receiveMessage(event) {
         if (data.hasOwnProperty("chat")) avatars[data.id].chat = data.chat;
         if (data.hasOwnProperty("chattime")) avatars[data.id].chattime = data.chattime;
 
-        if (data.hasOwnProperty("image") && avatars[data.id].image === undefined) avatars[data.id].image = document.getElementById(data.image);
+        if (data.hasOwnProperty("image") && avatars[data.id].image === undefined)
+                          avatars[data.id].image = document.getElementById(data.image);
+
         if (data.hasOwnProperty("name")) avatars[data.id].name = data.name;
 
         console.log(event.data);
