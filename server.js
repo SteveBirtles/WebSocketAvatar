@@ -6,11 +6,14 @@ const app = express();
 const server = http.createServer(app);
 const wsServer = new ws.Server({server});
 
+let serverStartTime;
+let clientCount = 0;
+let avatars = {};
+
 const port = 8081;
 
 app.use('/client', express.static('client'));
 
-let serverStartTime;
 server.listen(port, function(){
 
   console.log(`Server started on port ${port}`);
@@ -29,14 +32,9 @@ server.listen(port, function(){
 
     console.log(broadcast);
 
-}, 1000);
+  }, 1000);
 
 });
-
-
-let clientCount = 0;
-
-let avatars = {};
 
 wsServer.on('connection', client => {
 
@@ -60,10 +58,18 @@ wsServer.on('connection', client => {
         console.log(client.id + " --> " + message);
 
         if (data.hasOwnProperty("x")) avatars[client.id].x = data.x;
+        if (avatars[client.id].x < 1) avatars[client.id].x = 1;
+        if (avatars[client.id].x > 15) avatars[client.id].x = 15;
+
         if (data.hasOwnProperty("y")) avatars[client.id].y = data.y;
+        if (avatars[client.id].y < 1) avatars[client.id].y = 1;
+        if (avatars[client.id].y > 15) avatars[client.id].y = 15;
+
         if (data.hasOwnProperty("t")) avatars[client.id].t = data.t;
+
         if (data.hasOwnProperty("chat")) avatars[client.id].chat = data.chat;
         if (data.hasOwnProperty("chattime")) avatars[client.id].chattime = data.chattime;
+
         if (data.hasOwnProperty("image")) avatars[client.id].image = data.image;
         if (data.hasOwnProperty("name")) avatars[client.id].name = data.name;
 

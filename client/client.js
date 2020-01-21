@@ -1,9 +1,18 @@
 const moveTime = 200;
 const chatLifespan = 2000;
 
-let selectedAvatar;
 let pressedKeys = {};
 
+let connection;
+
+let clientTime;
+let lastUpdateTime;
+let lastServerTime;
+let worldTime;
+let lastClientTime;
+
+let selectedAvatar;
+let myId;
 let avatars = {};
 let chatting = false;
 
@@ -30,24 +39,16 @@ function pageLoad() {
             if (selectedAvatar !== undefined) selectedAvatar.classList.remove("selectedAvatar");
             selectedAvatar = event.target;
             selectedAvatar.classList.add("selectedAvatar");
+            document.getElementById("avatarName").focus();
         });
     }
 
     let joinButton = document.getElementById("joinButton");
 
-    joinButton.addEventListener("click", () => {
-        if (selectedAvatar === undefined) {
-          alert("Please pick an avatar!");
-          return;
-        }
-        if (document.getElementById("avatarName").value.trim() == "") {
-          alert("Please choose a name!");
-          return;
-        }
-        pickerDiv.style.display = "none";
-        document.getElementById("canvasDiv").style.display = "block";
-        joinGame();
+    joinButton.addEventListener("click", checkChoices);
 
+    document.getElementById("avatarName").addEventListener("keyup", event => {
+        if (event.key == "Enter") checkChoices();
     });
 
     window.addEventListener("keydown", event => pressedKeys[event.key] = true);
@@ -57,22 +58,23 @@ function pageLoad() {
 
 }
 
-function chat(event) {
+function checkChoices() {
 
-    if (event.key == "Enter" && event.target.value != "") {
-        let chatData = {chat: event.target.value, chattime: worldTime + chatLifespan}
-        sendMessage(JSON.stringify(chatData));
+    let pickerDiv = document.getElementById("avatarPicker");
 
-        event.target.value = "";
-        document.getElementById("chat").style.display = "none";
-        chatting = false;
-
+    if (selectedAvatar === undefined) {
+      alert("Please pick an avatar!");
+      return;
     }
+    if (document.getElementById("avatarName").value.trim() == "") {
+      alert("Please choose a name!");
+      return;
+    }
+    pickerDiv.style.display = "none";
+    document.getElementById("canvasDiv").style.display = "block";
+    joinGame();
 
 }
-
-
-let connection;
 
 function joinGame() {
 
@@ -88,14 +90,6 @@ function joinGame() {
     window.requestAnimationFrame(gameFrame);
 
 }
-
-let clientTime;
-let lastUpdateTime;
-let lastServerTime;
-let worldTime;
-let lastClientTime;
-
-let myId;
 
 function gameFrame(frameTime) {
 
@@ -165,13 +159,12 @@ function gameFrame(frameTime) {
       context.stroke();
     }
 
-    for (let i = 16; i < 768; i += 32) {
+    for (let i = 24; i < 768; i += 48) {
       context.beginPath();
       context.moveTo(0, i);
       context.lineTo(1024, i);
       context.stroke();
     }
-
 
     for (let id of Object.keys(avatars)) {
         let avatar = avatars[id];
@@ -196,8 +189,13 @@ function gameFrame(frameTime) {
 
         if (avatar.image !== undefined && avatar.image !== null && avatar.image !== "") {
 
+            context.fillStyle = 'gray';
+            context.beginPath();
+            context.ellipse(Math.floor(avatar.currentX*64), Math.floor(avatar.currentY*48), 32, 24, 0, 0, 2*Math.PI);
+            context.fill();
+
             context.drawImage(avatar.image,
-                  Math.floor(avatar.currentX*64-32), Math.floor(avatar.currentY*64-96));
+                  Math.floor(avatar.currentX*64-32), Math.floor(avatar.currentY*48-128));
 
         }
 
@@ -208,7 +206,7 @@ function gameFrame(frameTime) {
             context.font = '24px Arial';
             context.textAlign = 'center';
             context.fillText(avatar.name + ": " + avatar.chat,
-                  Math.floor(avatar.currentX*64), Math.floor(avatar.currentY*64-96));
+                  Math.floor(avatar.currentX*64), Math.floor(avatar.currentY*48-128));
 
         } else if (avatar.name !== undefined ) {
 
@@ -216,19 +214,11 @@ function gameFrame(frameTime) {
             context.font = '24px Arial';
             context.textAlign = 'center';
             context.fillText(avatar.name,
-                  Math.floor(avatar.currentX*64), Math.floor(avatar.currentY*64-96));
+                  Math.floor(avatar.currentX*64), Math.floor(avatar.currentY*48-128));
 
         }
 
     }
-
-    if (lastUpdateTime !== undefined) {
-        context.fillStyle = 'red';
-        context.font = '24px Arial';
-        context.textAlign = 'left';
-        context.fillText("WorldTime: " + worldTime, 10, 740);
-    }
-
 
     window.requestAnimationFrame(gameFrame);
 
@@ -250,23 +240,14 @@ function receiveMessage(event) {
         myId = data.you;
         console.log("Connected and given id of " + myId);
 
-        let newAvatar = {x: Math.floor(Math.random() * 16),
-                         y: Math.floor(Math.random() * 12),
+        let newAvatar = {x: Math.floor(Math.random() * 15) + 1,
+                         y: Math.floor(Math.random() * 15) + 1,
                          t: 0,
                          image: selectedAvatar.id,
                          name: document.getElementById("avatarName").value};
 
         sendMessage(JSON.stringify(newAvatar));
 
-    }
-
-    if (data.hasOwnProperty("delete")) {
-        delete avatars[data.delete];
-    }
-
-    if (data.hasOwnProperty("serverTime")) {
-        lastServerTime = data.serverTime;
-        lastUpdateTime = clientTime;
     }
 
     if (data.hasOwnProperty("id")) {
@@ -286,6 +267,33 @@ function receiveMessage(event) {
         if (data.hasOwnProperty("name")) avatars[data.id].name = data.name;
 
         console.log(event.data);
+
+    }
+
+    if (data.hasOwnProperty("serverTime")) {
+
+        lastServerTime = data.serverTime;
+        lastUpdateTime = clientTime;
+
+    }
+
+    if (data.hasOwnProperty("delete")) {
+
+        delete avatars[data.delete];
+
+    }
+
+}
+
+function chat(event) {
+
+    if (event.key == "Enter" && event.target.value != "") {
+        let chatData = {chat: event.target.value, chattime: worldTime + chatLifespan}
+        sendMessage(JSON.stringify(chatData));
+
+        event.target.value = "";
+        document.getElementById("chat").style.display = "none";
+        chatting = false;
 
     }
 
