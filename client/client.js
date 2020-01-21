@@ -136,7 +136,7 @@ function gameFrame(frameTime) {
                                 y: avatars[myId].targetY,
                                 t: avatars[myId].targetT}
 
-                    sendMessage(JSON.stringify(data));
+                    connection.send(JSON.stringify(data));
 
                 }
             }
@@ -224,13 +224,6 @@ function gameFrame(frameTime) {
 
 }
 
-function sendMessage(message) {
-
-    connection.send(message);
-
-}
-
-
 function receiveMessage(event) {
 
     let data = JSON.parse(event.data);
@@ -246,7 +239,7 @@ function receiveMessage(event) {
                          image: selectedAvatar.id,
                          name: document.getElementById("avatarName").value};
 
-        sendMessage(JSON.stringify(newAvatar));
+        connection.send(JSON.stringify(newAvatar));
 
     }
 
@@ -289,7 +282,7 @@ function chat(event) {
 
     if (event.key == "Enter" && event.target.value != "") {
         let chatData = {chat: event.target.value, chattime: worldTime + chatLifespan}
-        sendMessage(JSON.stringify(chatData));
+        connection.send(JSON.stringify(chatData));
 
         event.target.value = "";
         document.getElementById("chat").style.display = "none";
