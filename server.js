@@ -21,65 +21,70 @@ server.listen(port, function(){
 
     if (wsServer.clients.length === 0) return;
 
-    let now = Date.now();
-
-    let broadcast = `{"serverTime" : ${now - serverStartTime}}`;
-    for (let client of wsServer.clients) {
-        client.send(broadcast);
+    let broadcast = `{"serverTime" : ${Date.now() - serverStartTime}}`;
+    for (let c of wsServer.clients) {
+        c.send(broadcast);
     }
 
-  }, 50);
+    console.log(broadcast);
+
+}, 1000);
 
 });
 
 
 let clientCount = 0;
 
-let avatars = [];
+let avatars = {};
 
 wsServer.on('connection', client => {
 
     clientCount++;
     client.id = clientCount;
-    client.send(`{"you":${client.id}}`);
 
-    for (let avatar of avatars) {
-        client.send(`{"id": ${avatar.id}, "x": ${avatar.x}, "y": ${avatar.y}, "image": "${avatar.image}"}`);
+    console.log(`Client ${client.id} connected!`);
+
+    client.send(`{"you":${client.id}, "serverTime" : ${Date.now() - serverStartTime}}`);
+
+    for (let id of Object.keys(avatars)) {
+        sendAvatar(id, [client]);
     }
-
-    avatars.push({id: client.id, x: 0, y: 0, image: ""});
+    avatars[client.id] = {x: 0, y: 0, t: 0, chat: "", chattime: 0};
 
     client.on('message', message => {
 
         let data = JSON.parse(message);
 
-        if (data.hasOwnProperty("x") || data.hasOwnProperty("y") || data.hasOwnProperty("image")) {
+        console.log(client.id + " --> " + message);
 
-            for (let avatar of avatars) {
-                if (avatar.id == client.id) {
+        if (data.hasOwnProperty("x")) avatars[client.id].x = data.x;
+        if (data.hasOwnProperty("y")) avatars[client.id].y = data.y;
+        if (data.hasOwnProperty("t")) avatars[client.id].t = data.t;
+        if (data.hasOwnProperty("chat")) avatars[client.id].chat = data.chat;
+        if (data.hasOwnProperty("chattime")) avatars[client.id].chattime = data.chattime;
+        if (data.hasOwnProperty("image")) avatars[client.id].image = data.image;
+        if (data.hasOwnProperty("name")) avatars[client.id].name = data.name;
 
-                    console.log(message);
-
-                    if (data.hasOwnProperty("x")) avatar.x = data.x;
-                    if (data.hasOwnProperty("y")) avatar.y = data.y;
-                    if (data.hasOwnProperty("image")) avatar.image = data.image;
-
-                    let broadcast = `{"id": ${avatar.id}, "x": ${avatar.x}, "y": ${avatar.y}, "image": "${avatar.image}"}`;
-                    for (let otherClient of wsServer.clients) {
-                        if (otherClient.id != client.id) {
-                            otherClient.send(broadcast);
-                        }
-                    }
-                    console.log(broadcast);
-
-                }
-            }
-
-        }
+        sendAvatar(client.id, wsServer.clients);
 
     });
 
     client.on('close', () => {
+
+        console.log(`Client ${client.id} disconnected!`);
+
+        for (let c of wsServer.clients) {
+            c.send(`{"delete": ${client.id}}`);
+        }
+        delete avatars[client.id];
     });
 
+
 });
+
+function sendAvatar(id, clients) {
+    let broadcast = `{"id": ${id}, "x": ${avatars[id].x}, "y": ${avatars[id].y}, "t": ${avatars[id].t}, "image": "${avatars[id].image}", "chat": "${avatars[id].chat}", "chattime": ${avatars[id].chattime}, "name": "${avatars[id].name}"}`;
+    for (let c of clients) {
+        c.send(broadcast);
+    }
+}

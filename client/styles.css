@@ -14,10 +14,11 @@ h1 {
 
 #content {
     background-color: white;
-    width: 1000px;
+    width: 1024px;
     margin: 0 auto;
-    min-height: 600px;
+    min-height: 768;
     padding: 32px;
+    position: relative;
 }
 
 #pickerInputDiv {
@@ -49,6 +50,38 @@ h1 {
 
 #joinButton:hover {
     border: 5px solid grey;
+}
+
+#chat {
+    display: none;
+    top: 100px;
+    left: 132px;
+    position: absolute;
+    width: 824px;
+    padding: 16px;
+    background-color: grey;
+    border: 1px solid black;
+    z-index: 2;
+    float: left;
+    text-align: center;
+}
+
+#chattext {
+    font-size: 24pt;
+    width: 768px;
+}
+
+#canvasDiv {
+    position: relative;
+    top: 0px;
+    left: 0px;
+    display: none;
+    z-index: 1;
+    clear: both;
+}
+
+#avatarCanvas {
+    background-color: silver;
 }
 
 .avatar {
