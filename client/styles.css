@@ -84,6 +84,16 @@ h1 {
     background-color: silver;
 }
 
+#tilesDiv {
+    text-align: center;
+    margin-top: 32px;
+}
+
+.tile {
+    width: 64px;
+    height: 64px;
+}
+
 .avatar {
     border: 5px solid silver;
     margin: 5px;

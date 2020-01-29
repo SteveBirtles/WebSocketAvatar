@@ -18,6 +18,17 @@ let chatting = false;
 
 function pageLoad() {
 
+    let tileDiv = document.getElementById("tilesDiv");
+
+    let tileHTML = '';
+
+    for (let i = 1; i <= 12; i++) {
+        tileHTML += `<img src="/client/tiles/${i}.png" id="tile${i}" class="tile">`;
+    }
+
+    tileDiv.innerHTML = tileHTML;
+
+
     let pickerDiv = document.getElementById("avatarPicker");
 
     let pickerHTML = "<h1>Welcome! Please choose your avatar:</h1>";
