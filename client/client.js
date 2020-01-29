@@ -82,7 +82,9 @@ function checkChoices() {
       return;
     }
     pickerDiv.style.display = "none";
+    document.getElementById("tilesDiv").style.display = "none";
     document.getElementById("canvasDiv").style.display = "block";
+
     joinGame();
 
 }
@@ -102,11 +104,22 @@ function joinGame() {
 
 }
 
+
+let fps = 0;
+let lastFPStime = 0;
 function gameFrame(frameTime) {
 
     lastClientTime = clientTime;
     clientTime = Math.floor(frameTime);
     worldTime = lastServerTime + clientTime - lastUpdateTime;
+
+    if (frameTime - lastFPStime > 1000) {
+      document.title = "WebSocket Powererd Avatars [" + fps + " fps]";
+      fps = 0;
+      lastFPStime = frameTime;
+    } else {
+      fps++;
+    }
 
     if (myId !== undefined && avatars[myId] !== undefined) {
 
@@ -177,6 +190,15 @@ function gameFrame(frameTime) {
       context.stroke();
     }
 
+    let grid = [];
+    for (let x = 0; x <= 16; x++) {
+      let row = [];
+      for (let y = 0; y <= 16; y++) {
+        row.push([]);
+      }
+      grid.push(row);
+    }
+
     for (let id of Object.keys(avatars)) {
         let avatar = avatars[id];
 
@@ -198,7 +220,41 @@ function gameFrame(frameTime) {
 
         }
 
+
         if (avatar.image !== undefined && avatar.image !== null && avatar.image !== "") {
+
+          let x = Math.floor(avatar.currentX);
+          let y = Math.floor(avatar.currentY);
+          if (x >= 0 && x <= 16 && y >= 0 && y <= 16) {
+            grid[x][y].push(avatar);
+          }
+
+        }
+
+    }
+
+
+    let testtile = document.getElementById("tile1")
+
+    for (let x = 0; x <= 16; x++) {
+      for (let y = 0; y <= 16; y++) {
+
+          if (x % 3 == 1 && y % 3 == 1) {
+
+            context.globalAlpha = 1;
+            context.fillStyle = 'black';
+            context.fillRect(x*64-32, y*48+8, 64, 64);
+
+            context.globalAlpha = 0.75;
+            context.drawImage(testtile, 0,0,128,128, x*64-32, y*48+8, 64, 64);
+
+            context.globalAlpha = 1;
+            context.drawImage(testtile, 0,0,128,128, x*64-32, y*48-40, 64, 48);
+
+
+          }
+
+          for (let avatar of grid[x][y]) {
 
             context.fillStyle = 'gray';
             context.beginPath();
@@ -208,27 +264,27 @@ function gameFrame(frameTime) {
             context.drawImage(avatar.image,
                   Math.floor(avatar.currentX*64-32), Math.floor(avatar.currentY*48-128));
 
-        }
+            if (avatar.chattime !== undefined && avatar.chattime > worldTime) {
 
+                context.fillStyle = 'blue';
+                context.font = '24px Arial';
+                context.textAlign = 'center';
+                context.fillText(avatar.name + ": " + avatar.chat,
+                      Math.floor(avatar.currentX*64), Math.floor(avatar.currentY*48-128));
 
-        if (avatar.chattime !== undefined && avatar.chattime > worldTime) {
+            } else if (avatar.name !== undefined ) {
 
-            context.fillStyle = 'blue';
-            context.font = '24px Arial';
-            context.textAlign = 'center';
-            context.fillText(avatar.name + ": " + avatar.chat,
-                  Math.floor(avatar.currentX*64), Math.floor(avatar.currentY*48-128));
+                context.fillStyle = 'grey';
+                context.font = '24px Arial';
+                context.textAlign = 'center';
+                context.fillText(avatar.name,
+                      Math.floor(avatar.currentX*64), Math.floor(avatar.currentY*48-128));
 
-        } else if (avatar.name !== undefined ) {
+            }
 
-            context.fillStyle = 'grey';
-            context.font = '24px Arial';
-            context.textAlign = 'center';
-            context.fillText(avatar.name,
-                  Math.floor(avatar.currentX*64), Math.floor(avatar.currentY*48-128));
+          }
 
-        }
-
+      }
     }
 
     window.requestAnimationFrame(gameFrame);
