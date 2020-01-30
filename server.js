@@ -1,3 +1,5 @@
+const MAP_SIZE = 128;
+
 const express = require('express');
 const http = require('http');
 const ws = require('ws');
@@ -9,6 +11,16 @@ const wsServer = new ws.Server({server});
 let serverStartTime;
 let clientCount = 0;
 let avatars = {};
+
+let tileMap = [];
+
+for (let x = 0; x <= MAP_SIZE; x++) {
+  let row = [];
+  for (let y = 0; y <= MAP_SIZE; y++) {
+    row.push([7]);
+  }
+  tileMap.push(row);
+}
 
 const port = 8081;
 
@@ -49,7 +61,13 @@ wsServer.on('connection', client => {
     for (let id of Object.keys(avatars)) {
         sendAvatar(id, [client]);
     }
-    avatars[client.id] = {id: client.id, x: 0, y: 0, t: 0, chat: "", chattime: 0};
+    for (let x = 0; x <= MAP_SIZE; x++) {
+      for (let y = 0; y <= MAP_SIZE; y++) {
+          sendTileStack(x, y, tileMap[x][y], [client]);
+      }
+    }
+
+    avatars[client.id] = {id: client.id, x: Math.floor(MAP_SIZE/2), y: Math.floor(MAP_SIZE/2), t: 0, chat: "", chattime: 0};
 
     client.on('message', message => {
 
@@ -57,23 +75,67 @@ wsServer.on('connection', client => {
 
         console.log(client.id + " --> " + message);
 
-        if (data.hasOwnProperty("x")) avatars[client.id].x = data.x;
-        if (avatars[client.id].x < 1) avatars[client.id].x = 1;
-        if (avatars[client.id].x > 15) avatars[client.id].x = 15;
+        if (data.hasOwnProperty("tile")) {
 
-        if (data.hasOwnProperty("y")) avatars[client.id].y = data.y;
-        if (avatars[client.id].y < 1) avatars[client.id].y = 1;
-        if (avatars[client.id].y > 15) avatars[client.id].y = 15;
+            let x, y;
 
-        if (data.hasOwnProperty("t")) avatars[client.id].t = data.t;
+            if (data.hasOwnProperty("x")) x = data.x;
+            if (x < 1) x = 1;
+            if (x > MAP_SIZE-1) x = MAP_SIZE-1;
 
-        if (data.hasOwnProperty("chat")) avatars[client.id].chat = data.chat;
-        if (data.hasOwnProperty("chattime")) avatars[client.id].chattime = data.chattime;
+            if (data.hasOwnProperty("y")) y = data.y;
+            if (y < 1) y = 1;
+            if (y > MAP_SIZE-1) y = MAP_SIZE-1;
 
-        if (data.hasOwnProperty("image")) avatars[client.id].image = data.image;
-        if (data.hasOwnProperty("name")) avatars[client.id].name = data.name;
+            if (x !== undefined && y !== undefined) {
+                if (data.tile === -1 && tileMap[x][y].length > 0) {
+                    tileMap[x][y].pop();
+                } else {
+                    tileMap[x][y].push(data.tile);
+                }
 
-        sendAvatar(client.id, wsServer.clients);
+                sendTileStack(x, y, tileMap[x][y], wsServer.clients);
+            }
+
+        } else {
+
+            let lastX = avatars[client.id].x;
+            let lastY = avatars[client.id].y;
+            let reset = false;
+
+            if (data.hasOwnProperty("x")) avatars[client.id].x = data.x;
+            if (data.hasOwnProperty("y")) avatars[client.id].y = data.y;
+
+            if (avatars[client.id].x < 1 ||
+                avatars[client.id].x > MAP_SIZE-1 ||
+                avatars[client.id].y < 1 ||
+                avatars[client.id].y > MAP_SIZE-1) reset = true;
+
+            if (tileMap[avatars[client.id].x][avatars[client.id].y].length > 1) reset = true;
+
+            for (let id of Object.keys(avatars)) {
+                console.log("id - " + typeof id + ", client - " + typeof client.id);
+                if (id === String(client.id)) continue;
+                if (avatars[id].x === avatars[client.id].x && avatars[id].y === avatars[client.id].y) reset = true;
+            }
+
+            if (reset) {
+                console.log("Reset : " + client.id);
+                avatars[client.id].x = lastX;
+                avatars[client.id].y = lastY;
+            }
+
+            if (data.hasOwnProperty("t")) avatars[client.id].t = data.t;
+
+            if (data.hasOwnProperty("chat")) avatars[client.id].chat = data.chat;
+            if (data.hasOwnProperty("chattime")) avatars[client.id].chattime = data.chattime;
+
+            if (data.hasOwnProperty("image")) avatars[client.id].image = data.image;
+            if (data.hasOwnProperty("name")) avatars[client.id].name = data.name;
+
+            sendAvatar(client.id, wsServer.clients);
+
+        }
 
     });
 
@@ -93,6 +155,13 @@ wsServer.on('connection', client => {
 
 function sendAvatar(id, clients) {
     let broadcast = JSON.stringify(avatars[id]);
+    for (let c of clients) {
+        c.send(broadcast);
+    }
+}
+
+function sendTileStack(x, y, stack, clients) {
+    let broadcast = JSON.stringify({x, y, stack});
     for (let c of clients) {
         c.send(broadcast);
     }

@@ -1,3 +1,7 @@
+const MAP_SIZE = 128;
+let w = 0, h = 0;
+let cameraX = 0, cameraY = 0;
+
 const moveTime = 200;
 const chatLifespan = 2000;
 
@@ -12,9 +16,14 @@ let worldTime;
 let lastClientTime;
 
 let selectedAvatar;
+let selectedTile;
+let tiles = [];
 let myId;
 let avatars = {};
 let chatting = false;
+
+let tileMap = [];
+let pendingTileChanges = [];
 
 function pageLoad() {
 
@@ -28,6 +37,18 @@ function pageLoad() {
 
     tileDiv.innerHTML = tileHTML;
 
+    for (let i = 1; i <= 12; i++) {
+      tiles.push(document.getElementById("tile" + i));
+    }
+    selectedTile = 0;
+
+    for (let x = 0; x <= MAP_SIZE; x++) {
+      let row = [];
+      for (let y = 0; y <= MAP_SIZE; y++) {
+        row.push([]);
+      }
+      tileMap.push(row);
+    }
 
     let pickerDiv = document.getElementById("avatarPicker");
 
@@ -62,11 +83,6 @@ function pageLoad() {
         if (event.key == "Enter") checkChoices();
     });
 
-    window.addEventListener("keydown", event => pressedKeys[event.key] = true);
-    window.addEventListener("keyup", event => pressedKeys[event.key] = false);
-
-    document.getElementById("chattext").addEventListener("keyup", chat);
-
 }
 
 function checkChoices() {
@@ -81,11 +97,20 @@ function checkChoices() {
       alert("Please choose a name!");
       return;
     }
-    pickerDiv.style.display = "none";
-    document.getElementById("tilesDiv").style.display = "none";
-    document.getElementById("canvasDiv").style.display = "block";
+    document.getElementById("content").style.display = "none";
+    document.getElementById("avatarCanvas").style.display = "block";
 
     joinGame();
+
+}
+
+function fixSize() {
+
+    w = window.innerWidth;
+    h = window.innerHeight;
+    const canvas = document.getElementById('avatarCanvas');
+    canvas.width = w;
+    canvas.height = h;
 
 }
 
@@ -100,6 +125,13 @@ function joinGame() {
     connection.addEventListener('message', receiveMessage);
     connection.addEventListener('error', event => alert(event));
 
+    window.addEventListener("keydown", event => pressedKeys[event.key] = true);
+    window.addEventListener("keyup", event => pressedKeys[event.key] = false);
+
+    document.getElementById("chattext").addEventListener("keyup", chat);
+
+    fixSize();
+    window.addEventListener("resize", fixSize);
     window.requestAnimationFrame(gameFrame);
 
 }
@@ -107,6 +139,7 @@ function joinGame() {
 
 let fps = 0;
 let lastFPStime = 0;
+let blockPlace = false;
 function gameFrame(frameTime) {
 
     lastClientTime = clientTime;
@@ -135,22 +168,87 @@ function gameFrame(frameTime) {
             }
 
             if (!chatting) {
-                if (pressedKeys["ArrowUp"]) {
-                    avatars[myId].targetY -= 1;
-                    moved = true;
+
+                let x = Math.floor(avatars[myId].currentX);
+                let y = Math.floor(avatars[myId].currentY);
+
+                if ((pressedKeys["w"] || pressedKeys["W"]) && y > 0) {
+                    if (!blockPlace) {
+                        if (pressedKeys["Delete"]) {
+                            pendingTileChanges.push({x: x, y: y-1, tile: -1})
+                        } else {
+                            pendingTileChanges.push({x: x, y: y-1, tile: selectedTile})
+                        }
+                    }
+                    blockPlace = true;
+                } else if ((pressedKeys["s"] || pressedKeys["S"]) && y < MAP_SIZE) {
+                    if (!blockPlace) {
+                      if (pressedKeys["Delete"]) {
+                          pendingTileChanges.push({x: x, y: y+1, tile: -1})
+                      } else {
+                          pendingTileChanges.push({x: x, y: y+1, tile: selectedTile})
+                      }
+                    }
+                    blockPlace = true;
+                } else if ((pressedKeys["a"] || pressedKeys["A"]) && x > 0) {
+                    if (!blockPlace) {
+                      if (pressedKeys["Delete"]) {
+                          pendingTileChanges.push({x: x-1, y: y, tile: -1})
+                      } else {
+                          pendingTileChanges.push({x: x-1, y: y, tile: selectedTile})
+                      }
+                    }
+                    blockPlace = true;
+                } else if ((pressedKeys["d"] || pressedKeys["D"]) && y < MAP_SIZE) {
+                    if (!blockPlace) {
+                      if (pressedKeys["Delete"]) {
+                          pendingTileChanges.push({x: x+1, y: y, tile: -1})
+                      } else {
+                          pendingTileChanges.push({x: x+1, y: y, tile: selectedTile})
+                      }
+                    }
+                    blockPlace = true;
+                } else if ((pressedKeys["q"] || pressedKeys["Q"])) {
+                    if (!blockPlace) {
+                      selectedTile -= 1;
+                      if (selectedTile < 0) selectedTile = tiles.length-1;
+                    }
+                    blockPlace = true;
+                } else if ((pressedKeys["e"] || pressedKeys["E"])) {
+                    if (!blockPlace) {
+                      selectedTile += 1;
+                      if (selectedTile >= tiles.length-1) selectedTile = 0;
+                    }
+                    blockPlace = true;
+                } else {
+                  blockPlace = false;
                 }
-                if (pressedKeys["ArrowDown"]) {
-                    avatars[myId].targetY += 1;
-                    moved = true;
+
+                if (pressedKeys["ArrowUp"] && avatars[myId].targetY > 1) {
+                    if (tileMap[avatars[myId].targetX][avatars[myId].targetY-1].length <= 1) {
+                        avatars[myId].targetY -= 1;
+                        moved = true;
+                    }
                 }
-                if (pressedKeys["ArrowLeft"]) {
-                    avatars[myId].targetX -= 1;
-                    moved = true;
+                if (pressedKeys["ArrowDown"] && avatars[myId].targetY < MAP_SIZE-1) {
+                    if (tileMap[avatars[myId].targetX][avatars[myId].targetY+1].length <= 1) {
+                        avatars[myId].targetY += 1;
+                        moved = true;
+                    }
                 }
-                if (pressedKeys["ArrowRight"]) {
-                    avatars[myId].targetX += 1;
-                    moved = true;
+                if (pressedKeys["ArrowLeft"] && avatars[myId].targetX > 1) {
+                    if (tileMap[avatars[myId].targetX-1][avatars[myId].targetY].length <= 1) {
+                        avatars[myId].targetX -= 1;
+                        moved = true;
+                    }
                 }
+                if (pressedKeys["ArrowRight"] && avatars[myId].targetX < MAP_SIZE-1) {
+                    if (tileMap[avatars[myId].targetX+1][avatars[myId].targetY].length <= 1) {
+                        avatars[myId].targetX += 1;
+                        moved = true;
+                    }
+                  }
+
                 if (moved) {
 
                     avatars[myId].targetT = worldTime + moveTime;
@@ -163,6 +261,25 @@ function gameFrame(frameTime) {
                     connection.send(JSON.stringify(data));
 
                 }
+
+                if (pendingTileChanges.length > 0) {
+
+                    for (let change of pendingTileChanges) {
+
+                        /*if (change.tile === -1) {
+                            tileMap[change.x][change.y].pop();
+                        } else {
+                            tileMap[change.x][change.y].push(change.tile);
+                        }*/
+
+                        connection.send(JSON.stringify(change));
+
+                    }
+
+                    pendingTileChanges = [];
+
+                }
+
             }
 
         }
@@ -176,27 +293,27 @@ function gameFrame(frameTime) {
 
     context.strokeStyle = 'grey';
 
-    for (let i = 32; i < 1024; i += 64) {
+    for (let i = 32; i < w; i += 64) {
       context.beginPath();
       context.moveTo(i, 0);
       context.lineTo(i, 768);
       context.stroke();
     }
 
-    for (let i = 24; i < 768; i += 48) {
+    for (let i = 24; i < h; i += 48) {
       context.beginPath();
       context.moveTo(0, i);
       context.lineTo(1024, i);
       context.stroke();
     }
 
-    let grid = [];
-    for (let x = 0; x <= 16; x++) {
+    let avatarMap = [];
+    for (let x = 0; x <= MAP_SIZE; x++) {
       let row = [];
-      for (let y = 0; y <= 16; y++) {
+      for (let y = 0; y <= MAP_SIZE; y++) {
         row.push([]);
       }
-      grid.push(row);
+      avatarMap.push(row);
     }
 
     for (let id of Object.keys(avatars)) {
@@ -225,67 +342,130 @@ function gameFrame(frameTime) {
 
           let x = Math.floor(avatar.currentX);
           let y = Math.floor(avatar.currentY);
-          if (x >= 0 && x <= 16 && y >= 0 && y <= 16) {
-            grid[x][y].push(avatar);
+          let dy = avatar.currentY - Math.floor(avatar.currentY);
+          if (dy > 0) y++;
+          if (x >= 0 && x <= MAP_SIZE && y >= 0 && y <= MAP_SIZE) {
+            avatarMap[x][y].push(avatar);
           }
 
         }
 
     }
 
+    if (avatars[myId] !== undefined) {
+        if (cameraX < (avatars[myId].currentX-w/128) - (w/64)/4) cameraX = (avatars[myId].currentX-w/128) - (w/64)/4;
+        if (cameraY < (avatars[myId].currentY-h/96)  - (h/48)/4) cameraY = (avatars[myId].currentY-h/96)  - (h/48)/4;
+        if (cameraX > (avatars[myId].currentX-w/128) + (w/64)/4) cameraX = (avatars[myId].currentX-w/128) + (w/64)/4;
+        if (cameraY > (avatars[myId].currentY-h/96)  + (h/48)/4) cameraY = (avatars[myId].currentY-h/96)  + (h/48)/4;
+    }
 
-    let testtile = document.getElementById("tile1")
+    if (cameraX < 0) cameraX = 0;
+    if (cameraY < 0) cameraY = 0;
+    if (cameraX > MAP_SIZE-w/64) cameraX = MAP_SIZE-w/64;
+    if (cameraY > MAP_SIZE-h/48) cameraY = MAP_SIZE-h/48;
 
-    for (let x = 0; x <= 16; x++) {
-      for (let y = 0; y <= 16; y++) {
+    for (let y =  Math.floor(cameraY); y <=  Math.floor(cameraY) + h/48 + 1; y++) {
 
-          if (x % 3 == 1 && y % 3 == 1) {
+        for (let z = 0; z < 16; z++) {
 
-            context.globalAlpha = 1;
-            context.fillStyle = 'black';
-            context.fillRect(x*64-32, y*48+8, 64, 64);
+            let hideForeground = pressedKeys["Shift"] && y > Math.floor(avatars[myId].currentY);
+            if (hideForeground && z > 0) continue;
 
-            context.globalAlpha = 0.75;
-            context.drawImage(testtile, 0,0,128,128, x*64-32, y*48+8, 64, 64);
+            for (let x =  Math.floor(cameraX); x <=  Math.floor(cameraX) + w/64 + 1; x++) {
 
-            context.globalAlpha = 1;
-            context.drawImage(testtile, 0,0,128,128, x*64-32, y*48-40, 64, 48);
+              context.globalAlpha = 1;
 
+              if (tileMap[Math.floor(x)][Math.floor(y)].length > 0 && tileMap[Math.floor(x)][Math.floor(y)][z] != null) {
 
-          }
+                let t = tiles[tileMap[Math.floor(x)][Math.floor(y)][z]];
 
-          for (let avatar of grid[x][y]) {
+                if (z > 0) {
 
-            context.fillStyle = 'gray';
-            context.beginPath();
-            context.ellipse(Math.floor(avatar.currentX*64), Math.floor(avatar.currentY*48), 32, 24, 0, 0, 2*Math.PI);
-            context.fill();
+                  context.fillStyle = 'black';
+                  context.fillRect(x*64-32 - cameraX*64, y*48+24 - z*64 - cameraY*48, 64, 64);
 
-            context.drawImage(avatar.image,
-                  Math.floor(avatar.currentX*64-32), Math.floor(avatar.currentY*48-128));
+                  context.globalAlpha = 0.75;
+                  context.drawImage(t, 0,0,128,128, x*64-32 - cameraX*64, y*48+24 - z*64 - cameraY*48, 64, 64);
 
-            if (avatar.chattime !== undefined && avatar.chattime > worldTime) {
+                }
 
+                if (hideForeground) {
+                  context.globalAlpha = 0.5;
+                } else {
+                  context.globalAlpha = 1;
+                }
+                context.drawImage(t, 0,0,128,128, x*64-32 - cameraX*64, y*48-24 - z*64 - cameraY*48, 64, 48);
+
+              }
+
+              if (z === 0 && pressedKeys["Shift"]) {
                 context.fillStyle = 'blue';
-                context.font = '24px Arial';
+                context.font = '10px Arial';
                 context.textAlign = 'center';
-                context.fillText(avatar.name + ": " + avatar.chat,
-                      Math.floor(avatar.currentX*64), Math.floor(avatar.currentY*48-128));
-
-            } else if (avatar.name !== undefined ) {
-
-                context.fillStyle = 'grey';
-                context.font = '24px Arial';
-                context.textAlign = 'center';
-                context.fillText(avatar.name,
-                      Math.floor(avatar.currentX*64), Math.floor(avatar.currentY*48-128));
+                context.fillText(x + ", " + y + " (" + tileMap[Math.floor(x)][Math.floor(y)].length + ")", x*64 - cameraX*64, y*48 - cameraY*48);
+              }
 
             }
 
+            if (z === 0 && pressedKeys["Shift"]) {
+              if (Math.floor(avatars[myId].currentY) === y) {
+                context.globalAlpha = 0.5;
+                context.fillStyle = "red";
+                context.fillRect(avatars[myId].currentX*64-32 - cameraX*64, avatars[myId].currentY*48-24 - cameraY*48, 64, 48);
+                context.globalAlpha = 1;
+              }
+            }
+
+
           }
 
+          if (pressedKeys["Shift"]) continue;
+
+            for (let x = Math.floor(cameraX); x <=  Math.floor(cameraX) + w/64 + 1; x++) {
+              for (let z = 0; z < 16; z++) {
+
+                for (let avatar of avatarMap[Math.floor(x)][Math.floor(y)]) {
+
+                  context.fillStyle = 'gray';
+                  context.globalAlpha = 0.25;
+                  context.beginPath();
+                  context.ellipse(avatar.currentX*64 - cameraX*64, avatar.currentY*48 - cameraY*48, 32, 24, 0, 0, 2*Math.PI);
+                  context.fill();
+                  context.globalAlpha = 1;
+
+                  context.drawImage(avatar.image, avatar.currentX*64-32 - cameraX*64, avatar.currentY*48-128 - cameraY*48);
+
+                  if (avatar.chattime !== undefined && avatar.chattime > worldTime) {
+
+                      context.fillStyle = 'blue';
+                      context.font = '24px Arial';
+                      context.textAlign = 'center';
+                      context.fillText(avatar.name + ": " + avatar.chat,
+                            avatar.currentX*64 - cameraX*64, avatar.currentY*48-128 - cameraY*48);
+
+                  } else if (avatar.name !== undefined ) {
+
+                      context.fillStyle = 'grey';
+                      context.font = '24px Arial';
+                      context.textAlign = 'center';
+                      context.fillText(avatar.name,
+                            avatar.currentX*64 - cameraX*64, avatar.currentY*48-128 - cameraY*48);
+
+                  }
+
+              }
+            }
       }
     }
+
+    context.fillStyle = "navy";
+    context.fillRect(10,10,84,84);
+    context.drawImage(tiles[selectedTile], 0,0,128,128, 20, 20, 64, 64);
+
+    context.fillStyle = 'white';
+    context.font = '36px Arial';
+    context.textAlign = 'left';
+    context.fillText("Camera: " + cameraX + ", " + cameraY, 300, 100);
 
     window.requestAnimationFrame(gameFrame);
 
@@ -300,8 +480,8 @@ function receiveMessage(event) {
         myId = data.you;
         console.log("Connected and given id of " + myId);
 
-        let newAvatar = {x: Math.floor(Math.random() * 15) + 1,
-                         y: Math.floor(Math.random() * 15) + 1,
+        let newAvatar = {x: Math.floor(Math.random() * 10) + 1,
+                         y: Math.floor(Math.random() * 10) + 1,
                          t: 0,
                          image: selectedAvatar.id,
                          name: document.getElementById("avatarName").value};
@@ -327,6 +507,18 @@ function receiveMessage(event) {
         if (data.hasOwnProperty("name")) avatars[data.id].name = data.name;
 
         console.log(event.data);
+
+    }
+
+    if (data.hasOwnProperty("stack")) {
+
+        let x, y
+        if (data.hasOwnProperty("x")) x = data.x;
+        if (data.hasOwnProperty("y")) y = data.y;
+
+        if (x !== undefined && y !== undefined) {
+            tileMap[x][y] = data.stack;
+        }
 
     }
 

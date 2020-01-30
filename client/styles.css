@@ -1,7 +1,8 @@
 body {
     background-color: navy;
-    margin: 0;
     font-family: 'Arial', serif;
+    overflow:hidden;
+    margin: 0px;
 }
 
 h1 {
@@ -71,17 +72,9 @@ h1 {
     width: 768px;
 }
 
-#canvasDiv {
-    position: relative;
-    top: 0px;
-    left: 0px;
-    display: none;
-    z-index: 1;
-    clear: both;
-}
-
 #avatarCanvas {
     background-color: silver;
+    display: none;
 }
 
 #tilesDiv {
