@@ -187,6 +187,10 @@ function gameFrame(frameTime) {
                     if (!blockPlace) {
                         if (pressedKeys["Delete"]) {
                             pendingTileChanges.push({x: x, y: y-1, tile: -1})
+                        } else if (pressedKeys["Insert"]) {
+                            if (tileMap[x][y-1].length > 0) {
+                                selectedTile = tileMap[x][y-1][tileMap[x][y-1].length - 1];
+                            }
                         } else {
                             pendingTileChanges.push({x: x, y: y-1, tile: selectedTile})
                         }
@@ -196,6 +200,10 @@ function gameFrame(frameTime) {
                     if (!blockPlace) {
                       if (pressedKeys["Delete"]) {
                           pendingTileChanges.push({x: x, y: y+1, tile: -1})
+                      } else if (pressedKeys["Insert"]) {
+                          if (tileMap[x][y+1].length > 0) {
+                              selectedTile = tileMap[x][y+1][tileMap[x][y+1].length - 1];
+                          }
                       } else {
                           pendingTileChanges.push({x: x, y: y+1, tile: selectedTile})
                       }
@@ -205,6 +213,10 @@ function gameFrame(frameTime) {
                     if (!blockPlace) {
                       if (pressedKeys["Delete"]) {
                           pendingTileChanges.push({x: x-1, y: y, tile: -1})
+                      } else if (pressedKeys["Insert"]) {
+                          if (tileMap[x-1][y].length > 0) {
+                              selectedTile = tileMap[x-1][y][tileMap[x-1][y].length - 1];
+                          }
                       } else {
                           pendingTileChanges.push({x: x-1, y: y, tile: selectedTile})
                       }
@@ -214,6 +226,10 @@ function gameFrame(frameTime) {
                     if (!blockPlace) {
                       if (pressedKeys["Delete"]) {
                           pendingTileChanges.push({x: x+1, y: y, tile: -1})
+                      } else if (pressedKeys["Insert"]) {
+                          if (tileMap[x+1][y].length > 0) {
+                              selectedTile = tileMap[x+1][y][tileMap[x+1][y].length - 1];
+                          }
                       } else {
                           pendingTileChanges.push({x: x+1, y: y, tile: selectedTile})
                       }
