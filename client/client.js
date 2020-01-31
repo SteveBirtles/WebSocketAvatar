@@ -108,6 +108,12 @@ function fixSize() {
 
     w = window.innerWidth;
     h = window.innerHeight;
+
+    if (cameraX < 0) cameraX = 0;
+    if (cameraY < 0) cameraY = 0;
+    if (cameraX > MAP_SIZE-w/64) cameraX = MAP_SIZE-w/64;
+    if (cameraY > MAP_SIZE-h/48) cameraY = MAP_SIZE-h/48;
+
     const canvas = document.getElementById('avatarCanvas');
     canvas.width = w;
     canvas.height = h;
@@ -266,12 +272,6 @@ function gameFrame(frameTime) {
 
                     for (let change of pendingTileChanges) {
 
-                        /*if (change.tile === -1) {
-                            tileMap[change.x][change.y].pop();
-                        } else {
-                            tileMap[change.x][change.y].push(change.tile);
-                        }*/
-
                         connection.send(JSON.stringify(change));
 
                     }
@@ -289,7 +289,7 @@ function gameFrame(frameTime) {
     let canvas = document.getElementById("avatarCanvas");
     let context = canvas.getContext("2d");
 
-    context.clearRect(0,0,1024,768);
+    context.clearRect(0,0,w,h);
 
     context.strokeStyle = 'grey';
 
@@ -368,14 +368,14 @@ function gameFrame(frameTime) {
 
         for (let z = 0; z < 16; z++) {
 
-            let hideForeground = pressedKeys["Shift"] && y > Math.floor(avatars[myId].currentY);
+            let hideForeground = pressedKeys["Shift"] && avatars[myId] !== undefined && y > Math.floor(avatars[myId].currentY);
             if (hideForeground && z > 0) continue;
 
             for (let x =  Math.floor(cameraX); x <=  Math.floor(cameraX) + w/64 + 1; x++) {
 
               context.globalAlpha = 1;
 
-              if (tileMap[Math.floor(x)][Math.floor(y)].length > 0 && tileMap[Math.floor(x)][Math.floor(y)][z] != null) {
+              if (tileMap[Math.floor(x)] !== undefined && tileMap[Math.floor(x)][Math.floor(y)] !== undefined && tileMap[Math.floor(x)][Math.floor(y)].length > 0 && tileMap[Math.floor(x)][Math.floor(y)][z] != null) {
 
                 let t = tiles[tileMap[Math.floor(x)][Math.floor(y)][z]];
 
@@ -398,7 +398,7 @@ function gameFrame(frameTime) {
 
               }
 
-              if (z === 0 && pressedKeys["Shift"]) {
+              if (z === 0 && pressedKeys["Shift"] && tileMap[Math.floor(x)] !== undefined && tileMap[Math.floor(x)][Math.floor(y)] !== undefined) {
                 context.fillStyle = 'blue';
                 context.font = '10px Arial';
                 context.textAlign = 'center';
@@ -408,14 +408,13 @@ function gameFrame(frameTime) {
             }
 
             if (z === 0 && pressedKeys["Shift"]) {
-              if (Math.floor(avatars[myId].currentY) === y) {
+              if (avatars[myId] !== undefined && Math.floor(avatars[myId].currentY) === y) {
                 context.globalAlpha = 0.5;
                 context.fillStyle = "red";
                 context.fillRect(avatars[myId].currentX*64-32 - cameraX*64, avatars[myId].currentY*48-24 - cameraY*48, 64, 48);
                 context.globalAlpha = 1;
               }
             }
-
 
           }
 
@@ -424,35 +423,38 @@ function gameFrame(frameTime) {
             for (let x = Math.floor(cameraX); x <=  Math.floor(cameraX) + w/64 + 1; x++) {
               for (let z = 0; z < 16; z++) {
 
-                for (let avatar of avatarMap[Math.floor(x)][Math.floor(y)]) {
+                if (avatarMap[Math.floor(x)] !== undefined && avatarMap[Math.floor(x)][Math.floor(y)] !== undefined) {
 
-                  context.fillStyle = 'gray';
-                  context.globalAlpha = 0.25;
-                  context.beginPath();
-                  context.ellipse(avatar.currentX*64 - cameraX*64, avatar.currentY*48 - cameraY*48, 32, 24, 0, 0, 2*Math.PI);
-                  context.fill();
-                  context.globalAlpha = 1;
+                  for (let avatar of avatarMap[Math.floor(x)][Math.floor(y)]) {
 
-                  context.drawImage(avatar.image, avatar.currentX*64-32 - cameraX*64, avatar.currentY*48-128 - cameraY*48);
+                    context.fillStyle = 'gray';
+                    context.globalAlpha = 0.25;
+                    context.beginPath();
+                    context.ellipse(avatar.currentX*64 - cameraX*64, avatar.currentY*48 - cameraY*48, 32, 24, 0, 0, 2*Math.PI);
+                    context.fill();
+                    context.globalAlpha = 1;
 
-                  if (avatar.chattime !== undefined && avatar.chattime > worldTime) {
+                    context.drawImage(avatar.image, avatar.currentX*64-32 - cameraX*64, avatar.currentY*48-128 - cameraY*48);
 
-                      context.fillStyle = 'blue';
-                      context.font = '24px Arial';
-                      context.textAlign = 'center';
-                      context.fillText(avatar.name + ": " + avatar.chat,
-                            avatar.currentX*64 - cameraX*64, avatar.currentY*48-128 - cameraY*48);
+                    if (avatar.chattime !== undefined && avatar.chattime > worldTime) {
 
-                  } else if (avatar.name !== undefined ) {
+                        context.fillStyle = 'blue';
+                        context.font = '24px Arial';
+                        context.textAlign = 'center';
+                        context.fillText(avatar.name + ": " + avatar.chat,
+                              avatar.currentX*64 - cameraX*64, avatar.currentY*48-128 - cameraY*48);
 
-                      context.fillStyle = 'grey';
-                      context.font = '24px Arial';
-                      context.textAlign = 'center';
-                      context.fillText(avatar.name,
-                            avatar.currentX*64 - cameraX*64, avatar.currentY*48-128 - cameraY*48);
+                    } else if (avatar.name !== undefined ) {
 
-                  }
+                        context.fillStyle = 'grey';
+                        context.font = '24px Arial';
+                        context.textAlign = 'center';
+                        context.fillText(avatar.name,
+                              avatar.currentX*64 - cameraX*64, avatar.currentY*48-128 - cameraY*48);
 
+                    }
+
+                }
               }
             }
       }
@@ -462,10 +464,10 @@ function gameFrame(frameTime) {
     context.fillRect(10,10,84,84);
     context.drawImage(tiles[selectedTile], 0,0,128,128, 20, 20, 64, 64);
 
-    context.fillStyle = 'white';
-    context.font = '36px Arial';
-    context.textAlign = 'left';
-    context.fillText("Camera: " + cameraX + ", " + cameraY, 300, 100);
+    //context.fillStyle = 'white';
+    //context.font = '36px Arial';
+    //context.textAlign = 'left';
+    //context.fillText("Camera: " + cameraX + ", " + cameraY, 300, 100);
 
     window.requestAnimationFrame(gameFrame);
 
@@ -480,8 +482,8 @@ function receiveMessage(event) {
         myId = data.you;
         console.log("Connected and given id of " + myId);
 
-        let newAvatar = {x: Math.floor(Math.random() * 10) + 1,
-                         y: Math.floor(Math.random() * 10) + 1,
+        let newAvatar = {x: 120,// Math.floor(Math.random() * 10) + 1,
+                         y: 120,//Math.floor(Math.random() * 10) + 1,
                          t: 0,
                          image: selectedAvatar.id,
                          name: document.getElementById("avatarName").value};
