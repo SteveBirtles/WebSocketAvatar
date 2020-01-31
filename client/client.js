@@ -1,4 +1,7 @@
+const TILE_COUNT = 176;
+const AVATAR_COUNT = 43;
 const MAP_SIZE = 128;
+const TILE_SOURCE_SIZE = 64;
 let w = 0, h = 0;
 let cameraX = 0, cameraY = 0;
 
@@ -16,11 +19,12 @@ let worldTime;
 let lastClientTime;
 
 let selectedAvatar;
-let selectedTile;
+let selectedTile = 0;
 let tiles = [];
 let myId;
 let avatars = {};
 let chatting = false;
+let shadow = new Image();
 
 let tileMap = [];
 let pendingTileChanges = [];
@@ -31,16 +35,15 @@ function pageLoad() {
 
     let tileHTML = '';
 
-    for (let i = 1; i <= 12; i++) {
-        tileHTML += `<img src="/client/tiles/${i}.png" id="tile${i}" class="tile">`;
+    for (let i = 0; i < TILE_COUNT; i++) {
+        tileHTML += `<img src="/client/tiles/tile${i}.png" id="tile${i}" class="tile">`;
     }
 
     tileDiv.innerHTML = tileHTML;
 
-    for (let i = 1; i <= 12; i++) {
+    for (let i = 0; i < TILE_COUNT; i++) {
       tiles.push(document.getElementById("tile" + i));
     }
-    selectedTile = 0;
 
     for (let x = 0; x <= MAP_SIZE; x++) {
       let row = [];
@@ -54,7 +57,7 @@ function pageLoad() {
 
     let pickerHTML = "<h1>Welcome! Please choose your avatar:</h1>";
 
-    for (let i = 1; i <= 43; i++) {
+    for (let i = 1; i <= AVATAR_COUNT; i++) {
         pickerHTML += `<img src="/client/avatars/${i}.png" id="avatar${i}" class="avatar">`;
     }
 
@@ -82,6 +85,8 @@ function pageLoad() {
     document.getElementById("avatarName").addEventListener("keyup", event => {
         if (event.key == "Enter") checkChoices();
     });
+
+    shadow.src = "/client/shadow.png";
 
 }
 
@@ -223,6 +228,18 @@ function gameFrame(frameTime) {
                 } else if ((pressedKeys["e"] || pressedKeys["E"])) {
                     if (!blockPlace) {
                       selectedTile += 1;
+                      if (selectedTile >= tiles.length-1) selectedTile = 0;
+                    }
+                    blockPlace = true;
+                } else if (pressedKeys["PageUp"]) {
+                    if (!blockPlace) {
+                      selectedTile -= 10;
+                      if (selectedTile < 0) selectedTile = tiles.length-1;
+                    }
+                    blockPlace = true;
+                } else if (pressedKeys["PageDown"]) {
+                    if (!blockPlace) {
+                      selectedTile += 10;
                       if (selectedTile >= tiles.length-1) selectedTile = 0;
                     }
                     blockPlace = true;
@@ -368,7 +385,7 @@ function gameFrame(frameTime) {
 
         for (let z = 0; z < 16; z++) {
 
-            let hideForeground = pressedKeys["Shift"] && avatars[myId] !== undefined && y > Math.floor(avatars[myId].currentY);
+            let hideForeground = pressedKeys["Shift"] && !chatting && avatars[myId] !== undefined && y > Math.floor(avatars[myId].currentY);
             if (hideForeground && z > 0) continue;
 
             for (let x =  Math.floor(cameraX); x <=  Math.floor(cameraX) + w/64 + 1; x++) {
@@ -385,7 +402,7 @@ function gameFrame(frameTime) {
                   context.fillRect(x*64-32 - cameraX*64, y*48+24 - z*64 - cameraY*48, 64, 64);
 
                   context.globalAlpha = 0.75;
-                  context.drawImage(t, 0,0,128,128, x*64-32 - cameraX*64, y*48+24 - z*64 - cameraY*48, 64, 64);
+                  context.drawImage(t, 0,0,TILE_SOURCE_SIZE,TILE_SOURCE_SIZE, x*64-32 - cameraX*64, y*48+24 - z*64 - cameraY*48, 64, 64);
 
                 }
 
@@ -394,11 +411,11 @@ function gameFrame(frameTime) {
                 } else {
                   context.globalAlpha = 1;
                 }
-                context.drawImage(t, 0,0,128,128, x*64-32 - cameraX*64, y*48-24 - z*64 - cameraY*48, 64, 48);
+                context.drawImage(t, 0,0,TILE_SOURCE_SIZE,TILE_SOURCE_SIZE, x*64-32 - cameraX*64, y*48-24 - z*64 - cameraY*48, 64, 48);
 
               }
 
-              if (z === 0 && pressedKeys["Shift"] && tileMap[Math.floor(x)] !== undefined && tileMap[Math.floor(x)][Math.floor(y)] !== undefined) {
+              if (z === 0 && pressedKeys["Shift"] && !chatting && tileMap[Math.floor(x)] !== undefined && tileMap[Math.floor(x)][Math.floor(y)] !== undefined) {
                 context.fillStyle = 'blue';
                 context.font = '10px Arial';
                 context.textAlign = 'center';
@@ -407,7 +424,7 @@ function gameFrame(frameTime) {
 
             }
 
-            if (z === 0 && pressedKeys["Shift"]) {
+            if (z === 0 && pressedKeys["Shift"] && !chatting) {
               if (avatars[myId] !== undefined && Math.floor(avatars[myId].currentY) === y) {
                 context.globalAlpha = 0.5;
                 context.fillStyle = "red";
@@ -418,7 +435,7 @@ function gameFrame(frameTime) {
 
           }
 
-          if (pressedKeys["Shift"]) continue;
+          if (pressedKeys["Shift"] & !chatting) continue;
 
             for (let x = Math.floor(cameraX); x <=  Math.floor(cameraX) + w/64 + 1; x++) {
               for (let z = 0; z < 16; z++) {
@@ -427,11 +444,8 @@ function gameFrame(frameTime) {
 
                   for (let avatar of avatarMap[Math.floor(x)][Math.floor(y)]) {
 
-                    context.fillStyle = 'gray';
                     context.globalAlpha = 0.25;
-                    context.beginPath();
-                    context.ellipse(avatar.currentX*64 - cameraX*64, avatar.currentY*48 - cameraY*48, 32, 24, 0, 0, 2*Math.PI);
-                    context.fill();
+                    context.drawImage(shadow, 0,0,256,256,avatar.currentX*64 - cameraX*64 - 32, avatar.currentY*48 - cameraY*48 - 24, 64, 48);
                     context.globalAlpha = 1;
 
                     context.drawImage(avatar.image, avatar.currentX*64-32 - cameraX*64, avatar.currentY*48-128 - cameraY*48);
@@ -462,7 +476,7 @@ function gameFrame(frameTime) {
 
     context.fillStyle = "navy";
     context.fillRect(10,10,84,84);
-    context.drawImage(tiles[selectedTile], 0,0,128,128, 20, 20, 64, 64);
+    context.drawImage(tiles[selectedTile], 0,0,TILE_SOURCE_SIZE,TILE_SOURCE_SIZE, 20, 20, 64, 64);
 
     //context.fillStyle = 'white';
     //context.font = '36px Arial';
@@ -482,8 +496,8 @@ function receiveMessage(event) {
         myId = data.you;
         console.log("Connected and given id of " + myId);
 
-        let newAvatar = {x: 120,// Math.floor(Math.random() * 10) + 1,
-                         y: 120,//Math.floor(Math.random() * 10) + 1,
+        let newAvatar = {x: Math.floor(Math.random() * MAP_SIZE) + 1,
+                         y: Math.floor(Math.random() * MAP_SIZE) + 1,
                          t: 0,
                          image: selectedAvatar.id,
                          name: document.getElementById("avatarName").value};
@@ -547,6 +561,7 @@ function chat(event) {
 
         event.target.value = "";
         document.getElementById("chat").style.display = "none";
+        pressedKeys = {};
         chatting = false;
 
     }

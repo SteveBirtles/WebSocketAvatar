@@ -1,8 +1,11 @@
 const MAP_SIZE = 128;
+const MAP_FILE = "map.json";
+const BASE_TILE = 0;
 
 const express = require('express');
 const http = require('http');
 const ws = require('ws');
+const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
@@ -14,12 +17,29 @@ let avatars = {};
 
 let tileMap = [];
 
-for (let x = 0; x <= MAP_SIZE; x++) {
-  let row = [];
-  for (let y = 0; y <= MAP_SIZE; y++) {
-    row.push([7]);
-  }
-  tileMap.push(row);
+if (fs.existsSync(MAP_FILE)) {
+
+    console.log("Loading " + MAP_FILE + "...");
+
+    fs.readFile('map.json', 'utf8', function(err, raw) {
+        if (err) throw err;
+        map = JSON.parse(raw);
+    })
+
+} else {
+
+    console.log("Creating blank map...");
+
+    for (let x = 0; x <= MAP_SIZE; x++) {
+      let row = [];
+      for (let y = 0; y <= MAP_SIZE; y++) {
+        row.push([BASE_TILE]);
+      }
+      tileMap.push(row);
+    }
+    fs.writeFile('map.json', JSON.stringify(tileMap), function(err) {
+        if (err) throw err;
+    });
 }
 
 const port = 8081;
@@ -42,9 +62,17 @@ server.listen(port, function(){
         c.send(broadcast);
     }
 
-    console.log(broadcast);
-
   }, 1000);
+
+  setInterval(() => {
+
+      console.log("*** SAVING MAP (" + (Date.now() - serverStartTime) + ") ***");
+
+      fs.writeFile('map.json', JSON.stringify(tileMap), function(err) {
+          if (err) throw err;
+      });
+
+  }, 30000);
 
 });
 
@@ -54,9 +82,6 @@ wsServer.on('connection', client => {
     client.id = clientCount;
 
     console.log(`Client ${client.id} connected!`);
-
-    let newClientData = {you: client.id, serverTime: Date.now() - serverStartTime};
-    client.send(JSON.stringify(newClientData));
 
     for (let id of Object.keys(avatars)) {
         sendAvatar(id, [client]);
@@ -68,6 +93,9 @@ wsServer.on('connection', client => {
     }
 
     avatars[client.id] = {id: client.id, x: Math.floor(MAP_SIZE/2), y: Math.floor(MAP_SIZE/2), t: 0, chat: "", chattime: 0};
+
+    let newClientData = {you: client.id, serverTime: Date.now() - serverStartTime};
+    client.send(JSON.stringify(newClientData));
 
     client.on('message', message => {
 

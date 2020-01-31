@@ -55,10 +55,10 @@ h1 {
 
 #chat {
     display: none;
-    top: 100px;
-    left: 132px;
+    top: 10px;
+    left: 10px;
     position: absolute;
-    width: 824px;
+    width: 800px;
     padding: 16px;
     background-color: grey;
     border: 1px solid black;
@@ -75,6 +75,7 @@ h1 {
 #avatarCanvas {
     background-color: silver;
     display: none;
+    z-index: 1;
 }
 
 #tilesDiv {
