@@ -23,7 +23,7 @@ if (fs.existsSync(MAP_FILE)) {
 
     fs.readFile('map.json', 'utf8', function(err, raw) {
         if (err) throw err;
-        map = JSON.parse(raw);
+        tileMap = JSON.parse(raw);
     })
 
 } else {
