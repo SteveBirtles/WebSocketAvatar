@@ -142,13 +142,11 @@ wsServer.on('connection', client => {
             if (tileMap[avatars[client.id].x][avatars[client.id].y].length > 1) reset = true;
 
             for (let id of Object.keys(avatars)) {
-                console.log("id - " + typeof id + ", client - " + typeof client.id);
                 if (id === String(client.id)) continue;
                 if (avatars[id].x === avatars[client.id].x && avatars[id].y === avatars[client.id].y) reset = true;
             }
 
             if (reset) {
-                console.log("Reset : " + client.id);
                 avatars[client.id].x = lastX;
                 avatars[client.id].y = lastY;
             }
