@@ -410,24 +410,28 @@ function gameFrame(frameTime) {
 
               if (tileMap[Math.floor(x)] !== undefined && tileMap[Math.floor(x)][Math.floor(y)] !== undefined && tileMap[Math.floor(x)][Math.floor(y)].length > 0 && tileMap[Math.floor(x)][Math.floor(y)][z] != null) {
 
-                let t = tiles[tileMap[Math.floor(x)][Math.floor(y)][z]];
+                if (tileMap[Math.floor(x)][Math.floor(y)][z] >= 0 && tileMap[Math.floor(x)][Math.floor(y)][z] <= TILE_COUNT) {
 
-                if (z > 0) {
+                  let t = tiles[tileMap[Math.floor(x)][Math.floor(y)][z]];
 
-                  context.fillStyle = 'black';
-                  context.fillRect(x*64-32 - cameraX*64, y*48+24 - z*64 - cameraY*48, 64, 64);
+                  if (z > 0) {
 
-                  context.globalAlpha = 0.75;
-                  context.drawImage(t, 0,0,TILE_SOURCE_SIZE,TILE_SOURCE_SIZE, x*64-32 - cameraX*64, y*48+24 - z*64 - cameraY*48, 64, 64);
+                    context.fillStyle = 'black';
+                    context.fillRect(x*64-32 - cameraX*64, y*48+24 - z*64 - cameraY*48, 64, 64);
+
+                    context.globalAlpha = 0.75;
+                    context.drawImage(t, 0,0,TILE_SOURCE_SIZE,TILE_SOURCE_SIZE, x*64-32 - cameraX*64, y*48+24 - z*64 - cameraY*48, 64, 64);
+
+                  }
+
+                  if (hideForeground) {
+                    context.globalAlpha = 0.5;
+                  } else {
+                    context.globalAlpha = 1;
+                  }
+                  context.drawImage(t, 0,0,TILE_SOURCE_SIZE,TILE_SOURCE_SIZE, x*64-32 - cameraX*64, y*48-24 - z*64 - cameraY*48, 64, 48);
 
                 }
-
-                if (hideForeground) {
-                  context.globalAlpha = 0.5;
-                } else {
-                  context.globalAlpha = 1;
-                }
-                context.drawImage(t, 0,0,TILE_SOURCE_SIZE,TILE_SOURCE_SIZE, x*64-32 - cameraX*64, y*48-24 - z*64 - cameraY*48, 64, 48);
 
               }
 
