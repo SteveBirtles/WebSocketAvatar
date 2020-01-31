@@ -19,7 +19,7 @@ let worldTime;
 let lastClientTime;
 
 let selectedAvatar;
-let selectedTile = 0;
+let selectedTile = 86;
 let tiles = [];
 let myId;
 let avatars = {};

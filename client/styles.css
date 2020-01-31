@@ -81,6 +81,7 @@ h1 {
 #tilesDiv {
     text-align: center;
     margin-top: 32px;
+    display: none;
 }
 
 .tile {
