@@ -105,7 +105,7 @@ wsServer.on('connection', client => {
 
         if (data.hasOwnProperty("tile")) {
 
-            let x, y;
+            let x, y, z;
 
             if (data.hasOwnProperty("x")) x = data.x;
             if (x < 1) x = 1;
@@ -115,11 +115,37 @@ wsServer.on('connection', client => {
             if (y < 1) y = 1;
             if (y > MAP_SIZE-1) y = MAP_SIZE-1;
 
+            if (data.hasOwnProperty("z")) z = data.z;
+            if (z < 0) z = 0;
+            if (z > 11) z = 11;
+
             if (x !== undefined && y !== undefined) {
                 if (data.tile === -1 && tileMap[x][y].length > 0) {
-                    tileMap[x][y].pop();
-                } else {
-                    tileMap[x][y].push(data.tile);
+                    if (z === tileMap[x][y].length - 1) {
+                        tileMap[x][y].pop();
+                        let n = tileMap[x][y].length - 1;
+                        while (n >= 0) {
+                            if (tileMap[x][y][n] == null) {
+                                tileMap[x][y].pop();
+                            } else {
+                                break;
+                            }
+                            n--;
+                        }
+                    } else {
+                        tileMap[x][y][z] = null;
+                    }
+                    if (tileMap[x][y].length === 1 && tileMap[x][y][0] === null) tileMap[x][y][z] = [];
+                } else if (tileMap[x][y].length < 12) {
+                    if (data.tile === -2) data.tile = null;
+                    if (z < tileMap[x][y].length) {
+                        tileMap[x][y][z] = data.tile;
+                    } else {
+                        for (let n = tileMap[x][y].length; n < z; n++) {
+                            tileMap[x][y].push(null);
+                        }
+                        tileMap[x][y].push(data.tile);
+                    }
                 }
 
                 sendTileStack(x, y, tileMap[x][y], wsServer.clients);
@@ -139,7 +165,10 @@ wsServer.on('connection', client => {
                 avatars[client.id].y < 1 ||
                 avatars[client.id].y > MAP_SIZE-1) reset = true;
 
-            if (tileMap[avatars[client.id].x][avatars[client.id].y].length > 1) reset = true;
+            if (tileMap[avatars[client.id].x][avatars[client.id].y].length > 1 && !(
+                tileMap[avatars[client.id].x][avatars[client.id].y].length >= 3 &&
+                tileMap[avatars[client.id].x][avatars[client.id].y][1] === null &&
+                tileMap[avatars[client.id].x][avatars[client.id].y][2] === null)) reset = true;
 
             for (let id of Object.keys(avatars)) {
                 if (id === String(client.id)) continue;

@@ -185,7 +185,9 @@ function gameFrame(frameTime) {
 
                 if ((pressedKeys["w"] || pressedKeys["W"]) && y > 0) {
                     if (!blockPlace) {
-                        if (pressedKeys["Delete"]) {
+                        if (pressedKeys["`"]) {
+                            pendingTileChanges.push({x: x, y: y-1, tile: -2})
+                        } else if (pressedKeys["Delete"]) {
                             pendingTileChanges.push({x: x, y: y-1, tile: -1})
                         } else if (pressedKeys["Insert"]) {
                             if (tileMap[x][y-1].length > 0) {
@@ -198,7 +200,9 @@ function gameFrame(frameTime) {
                     blockPlace = true;
                 } else if ((pressedKeys["s"] || pressedKeys["S"]) && y < MAP_SIZE) {
                     if (!blockPlace) {
-                      if (pressedKeys["Delete"]) {
+                      if (pressedKeys["`"]) {
+                          pendingTileChanges.push({x: x, y: y+1, tile: -2})
+                      } else if (pressedKeys["Delete"]) {
                           pendingTileChanges.push({x: x, y: y+1, tile: -1})
                       } else if (pressedKeys["Insert"]) {
                           if (tileMap[x][y+1].length > 0) {
@@ -211,7 +215,9 @@ function gameFrame(frameTime) {
                     blockPlace = true;
                 } else if ((pressedKeys["a"] || pressedKeys["A"]) && x > 0) {
                     if (!blockPlace) {
-                      if (pressedKeys["Delete"]) {
+                      if (pressedKeys["`"]) {
+                          pendingTileChanges.push({x: x-1, y: y, tile: -2})
+                      } else if (pressedKeys["Delete"]) {
                           pendingTileChanges.push({x: x-1, y: y, tile: -1})
                       } else if (pressedKeys["Insert"]) {
                           if (tileMap[x-1][y].length > 0) {
@@ -224,7 +230,9 @@ function gameFrame(frameTime) {
                     blockPlace = true;
                 } else if ((pressedKeys["d"] || pressedKeys["D"]) && y < MAP_SIZE) {
                     if (!blockPlace) {
-                      if (pressedKeys["Delete"]) {
+                      if (pressedKeys["`"]) {
+                          pendingTileChanges.push({x: x+1, y: y, tile: -2})
+                      } else if (pressedKeys["Delete"]) {
                           pendingTileChanges.push({x: x+1, y: y, tile: -1})
                       } else if (pressedKeys["Insert"]) {
                           if (tileMap[x+1][y].length > 0) {
@@ -232,6 +240,31 @@ function gameFrame(frameTime) {
                           }
                       } else {
                           pendingTileChanges.push({x: x+1, y: y, tile: selectedTile})
+                      }
+                    }
+                    blockPlace = true;
+                } else if (pressedKeys["1"] || pressedKeys["2"] || pressedKeys["3"] || pressedKeys["4"] || pressedKeys["5"] ||
+                            pressedKeys["6"] || pressedKeys["7"] || pressedKeys["8"] || pressedKeys["9"] || pressedKeys["f"] || pressedKeys["F"]) {
+                    if (!blockPlace) {
+                      let z;
+                      if (pressedKeys["1"]) z = 3;
+                      if (pressedKeys["2"]) z = 4;
+                      if (pressedKeys["3"]) z = 5;
+                      if (pressedKeys["4"]) z = 6;
+                      if (pressedKeys["5"]) z = 7;
+                      if (pressedKeys["6"]) z = 8;
+                      if (pressedKeys["7"]) z = 9;
+                      if (pressedKeys["8"]) z = 10;
+                      if (pressedKeys["9"]) z = 11;
+                      if (pressedKeys["f"] || pressedKeys["F"]) z = 0;
+                      if (pressedKeys["Delete"]) {
+                          pendingTileChanges.push({x: x, y: y, tile: -1, z})
+                      } else if (pressedKeys["Insert"]) {
+                          if (tileMap[x][y].length > 0) {
+                              selectedTile = tileMap[x][y][tileMap[x][y].length - 1][z];
+                          }
+                      } else {
+                          pendingTileChanges.push({x: x, y: y, tile: selectedTile, z})
                       }
                     }
                     blockPlace = true;
@@ -264,25 +297,41 @@ function gameFrame(frameTime) {
                 }
 
                 if (pressedKeys["ArrowUp"] && avatars[myId].targetY > 1) {
-                    if (tileMap[avatars[myId].targetX][avatars[myId].targetY-1].length <= 1) {
+                    let clearPath = tileMap[avatars[myId].targetX][avatars[myId].targetY-1].length <= 1 ||
+                        (tileMap[avatars[myId].targetX][avatars[myId].targetY-1].length >= 3 &&
+                            tileMap[avatars[myId].targetX][avatars[myId].targetY-1][1] === null &&
+                            tileMap[avatars[myId].targetX][avatars[myId].targetY-1][2] === null);
+                    if (clearPath) {
                         avatars[myId].targetY -= 1;
                         moved = true;
                     }
                 }
                 if (pressedKeys["ArrowDown"] && avatars[myId].targetY < MAP_SIZE-1) {
-                    if (tileMap[avatars[myId].targetX][avatars[myId].targetY+1].length <= 1) {
+                    let clearPath = tileMap[avatars[myId].targetX][avatars[myId].targetY+1].length <= 1 ||
+                        (tileMap[avatars[myId].targetX][avatars[myId].targetY+1].length >= 3 &&
+                            tileMap[avatars[myId].targetX][avatars[myId].targetY+1][1] === null &&
+                            tileMap[avatars[myId].targetX][avatars[myId].targetY+1][2] === null);
+                    if (clearPath) {
                         avatars[myId].targetY += 1;
                         moved = true;
                     }
                 }
                 if (pressedKeys["ArrowLeft"] && avatars[myId].targetX > 1) {
-                    if (tileMap[avatars[myId].targetX-1][avatars[myId].targetY].length <= 1) {
+                    let clearPath = tileMap[avatars[myId].targetX-1][avatars[myId].targetY].length <= 1 ||
+                        (tileMap[avatars[myId].targetX-1][avatars[myId].targetY].length >= 3 &&
+                            tileMap[avatars[myId].targetX-1][avatars[myId].targetY][1] === null &&
+                            tileMap[avatars[myId].targetX-1][avatars[myId].targetY][2] === null);
+                    if (clearPath) {
                         avatars[myId].targetX -= 1;
                         moved = true;
                     }
                 }
                 if (pressedKeys["ArrowRight"] && avatars[myId].targetX < MAP_SIZE-1) {
-                    if (tileMap[avatars[myId].targetX+1][avatars[myId].targetY].length <= 1) {
+                    let clearPath = tileMap[avatars[myId].targetX+1][avatars[myId].targetY].length <= 1 ||
+                        (tileMap[avatars[myId].targetX+1][avatars[myId].targetY].length >= 3 &&
+                            tileMap[avatars[myId].targetX+1][avatars[myId].targetY][1] === null &&
+                            tileMap[avatars[myId].targetX+1][avatars[myId].targetY][2] === null);
+                    if (clearPath) {
                         avatars[myId].targetX += 1;
                         moved = true;
                     }
@@ -299,13 +348,24 @@ function gameFrame(frameTime) {
 
                     connection.send(JSON.stringify(data));
 
+                    blockPlace = false;
+
                 }
 
                 if (pendingTileChanges.length > 0) {
 
                     for (let change of pendingTileChanges) {
 
+                        if (!change.hasOwnProperty("z")) {
+                            if (change.tile === -1) {
+                                change.z = tileMap[change.x][change.y].length - 1;
+                            } else {
+                                change.z = tileMap[change.x][change.y].length;
+                            }
+                        }
+
                         connection.send(JSON.stringify(change));
+
 
                     }
 
@@ -323,22 +383,6 @@ function gameFrame(frameTime) {
     let context = canvas.getContext("2d");
 
     context.clearRect(0,0,w,h);
-
-    context.strokeStyle = 'grey';
-
-    for (let i = 32; i < w; i += 64) {
-      context.beginPath();
-      context.moveTo(i, 0);
-      context.lineTo(i, 768);
-      context.stroke();
-    }
-
-    for (let i = 24; i < h; i += 48) {
-      context.beginPath();
-      context.moveTo(0, i);
-      context.lineTo(1024, i);
-      context.stroke();
-    }
 
     let avatarMap = [];
     for (let x = 0; x <= MAP_SIZE; x++) {
@@ -397,9 +441,13 @@ function gameFrame(frameTime) {
     if (cameraX > MAP_SIZE-w/64) cameraX = MAP_SIZE-w/64;
     if (cameraY > MAP_SIZE-h/48) cameraY = MAP_SIZE-h/48;
 
-    for (let y =  Math.floor(cameraY); y <=  Math.floor(cameraY) + h/48 + 1; y++) {
+    for (let y =  Math.floor(cameraY); y <= Math.floor(cameraY) + h/48 + 16; y++) {
 
         for (let z = 0; z < 16; z++) {
+
+            let offScreen = y - z * (4/3) > Math.floor(cameraY) + h/48 + 1;
+
+            if (offScreen) continue;
 
             let hideForeground = pressedKeys["Shift"] && !chatting && avatars[myId] !== undefined && y > Math.floor(avatars[myId].currentY);
             if (hideForeground && z > 0) continue;
@@ -408,28 +456,44 @@ function gameFrame(frameTime) {
 
               context.globalAlpha = 1;
 
-              if (tileMap[Math.floor(x)] !== undefined && tileMap[Math.floor(x)][Math.floor(y)] !== undefined && tileMap[Math.floor(x)][Math.floor(y)].length > 0 && tileMap[Math.floor(x)][Math.floor(y)][z] != null) {
+              if (tileMap[Math.floor(x)] !== undefined && tileMap[Math.floor(x)][Math.floor(y)] !== undefined && tileMap[Math.floor(x)][Math.floor(y)].length > 0) {
 
-                if (tileMap[Math.floor(x)][Math.floor(y)][z] >= 0 && tileMap[Math.floor(x)][Math.floor(y)][z] <= TILE_COUNT) {
+                if (tileMap[Math.floor(x)][Math.floor(y)][z] === null) {
 
-                  let t = tiles[tileMap[Math.floor(x)][Math.floor(y)][z]];
+                    if (z === tileMap[Math.floor(x)][Math.floor(y)].length - 1) {
+                        context.globalAlpha = 0.3333;
+                        context.fillStyle = 'blue';
+                        context.fillRect(x*64-32 - cameraX*64, y*48-24 - z*64 - cameraY*48, 64+1, 48+1);
+                    }
 
-                  if (z > 0) {
+                } else {
 
-                    context.fillStyle = 'black';
-                    context.fillRect(x*64-32 - cameraX*64, y*48+24 - z*64 - cameraY*48, 64, 64);
+                    if (tileMap[Math.floor(x)][Math.floor(y)][z] >= 0 && tileMap[Math.floor(x)][Math.floor(y)][z] <= TILE_COUNT) {
 
-                    context.globalAlpha = 0.75;
-                    context.drawImage(t, 0,0,TILE_SOURCE_SIZE,TILE_SOURCE_SIZE, x*64-32 - cameraX*64, y*48+24 - z*64 - cameraY*48, 64, 64);
+                      let t = tiles[tileMap[Math.floor(x)][Math.floor(y)][z]];
 
+                      if (z < tileMap[Math.floor(x)][Math.floor(y)].length - 1) {
+
+                          context.globalAlpha = 1;
+
+                          if (tileMap[Math.floor(x)][Math.floor(y)][z + 1] === null) {
+                              context.fillStyle = 'black';
+                              context.fillRect(x*64-32 - cameraX*64, y*48-24 - z*64 - cameraY*48, 64+1, 48+1);
+                              context.globalAlpha = 0.333;
+                              context.drawImage(t, 0,0,TILE_SOURCE_SIZE,TILE_SOURCE_SIZE, x*64-32 - cameraX*64, y*48-24 - z*64 - cameraY*48, 64, 48);
+                          }
+
+                      } else {
+
+                          if (hideForeground) {
+                              context.globalAlpha = 0.5;
+                          } else {
+                              context.globalAlpha = 1;
+                          }
+                          context.drawImage(t, 0,0,TILE_SOURCE_SIZE,TILE_SOURCE_SIZE, x*64-32 - cameraX*64, y*48-24 - z*64 - cameraY*48, 64, 48);
+
+                      }
                   }
-
-                  if (hideForeground) {
-                    context.globalAlpha = 0.5;
-                  } else {
-                    context.globalAlpha = 1;
-                  }
-                  context.drawImage(t, 0,0,TILE_SOURCE_SIZE,TILE_SOURCE_SIZE, x*64-32 - cameraX*64, y*48-24 - z*64 - cameraY*48, 64, 48);
 
                 }
 
@@ -455,43 +519,92 @@ function gameFrame(frameTime) {
 
           }
 
-          if (pressedKeys["Shift"] & !chatting) continue;
+          if (!(pressedKeys["Shift"] && chatting) && y < Math.floor(cameraY) + h/48 + 1) {
 
-            for (let x = Math.floor(cameraX); x <=  Math.floor(cameraX) + w/64 + 1; x++) {
-              for (let z = 0; z < 16; z++) {
+                for (let x = Math.floor(cameraX); x <=  Math.floor(cameraX) + w/64 + 1; x++) {
+                  for (let z = 0; z < 16; z++) {
 
-                if (avatarMap[Math.floor(x)] !== undefined && avatarMap[Math.floor(x)][Math.floor(y)] !== undefined) {
+                    if (avatarMap[Math.floor(x)] !== undefined && avatarMap[Math.floor(x)][Math.floor(y)] !== undefined) {
 
-                  for (let avatar of avatarMap[Math.floor(x)][Math.floor(y)]) {
+                      for (let avatar of avatarMap[Math.floor(x)][Math.floor(y)]) {
 
-                    context.globalAlpha = 0.25;
-                    context.drawImage(shadow, 0,0,256,256,avatar.currentX*64 - cameraX*64 - 32, avatar.currentY*48 - cameraY*48 - 24, 64, 48);
-                    context.globalAlpha = 1;
+                        context.globalAlpha = 0.25;
+                        context.drawImage(shadow, 0,0,256,256,avatar.currentX*64 - cameraX*64 - 32, avatar.currentY*48 - cameraY*48 - 24, 64, 48);
+                        context.globalAlpha = 1;
 
-                    context.drawImage(avatar.image, avatar.currentX*64-32 - cameraX*64, avatar.currentY*48-128 - cameraY*48);
+                        context.drawImage(avatar.image, avatar.currentX*64-32 - cameraX*64, avatar.currentY*48-128 - cameraY*48);
 
-                    if (avatar.chattime !== undefined && avatar.chattime > worldTime) {
+                        if (avatar.chattime !== undefined && avatar.chattime > worldTime) {
 
-                        context.fillStyle = 'blue';
-                        context.font = '24px Arial';
-                        context.textAlign = 'center';
-                        context.fillText(avatar.name + ": " + avatar.chat,
-                              avatar.currentX*64 - cameraX*64, avatar.currentY*48-128 - cameraY*48);
+                            context.fillStyle = 'blue';
+                            context.font = '24px Arial';
+                            context.textAlign = 'center';
+                            context.fillText(avatar.name + ": " + avatar.chat,
+                                  avatar.currentX*64 - cameraX*64, avatar.currentY*48-128 - cameraY*48);
 
-                    } else if (avatar.name !== undefined ) {
+                        } else if (avatar.name !== undefined ) {
 
-                        context.fillStyle = 'grey';
-                        context.font = '24px Arial';
-                        context.textAlign = 'center';
-                        context.fillText(avatar.name,
-                              avatar.currentX*64 - cameraX*64, avatar.currentY*48-128 - cameraY*48);
+                            context.fillStyle = 'grey';
+                            context.font = '24px Arial';
+                            context.textAlign = 'center';
+                            context.fillText(avatar.name,
+                                  avatar.currentX*64 - cameraX*64, avatar.currentY*48-128 - cameraY*48);
 
+                        }
+
+                    }
+                  }
+                }
+            }
+        }
+
+        for (let x =  Math.floor(cameraX); x <=  Math.floor(cameraX) + w/64 + 1; x++) {
+
+            for (let z = 1; z < 16; z++) {
+
+                let offScreen = y - z * (4/3) > Math.floor(cameraY) + h/48 + 1;
+
+                if (offScreen) continue;
+
+                let hideForeground = pressedKeys["Shift"] && !chatting && avatars[myId] !== undefined && y > Math.floor(avatars[myId].currentY);
+                if (hideForeground && z > 0) continue;
+
+                if (tileMap[Math.floor(x)] !== undefined && tileMap[Math.floor(x)][Math.floor(y)] !== undefined &&
+                    tileMap[Math.floor(x)][Math.floor(y)].length > 0) {
+
+                    if (tileMap[Math.floor(x)][Math.floor(y)][z] === null) {
+
+                        if (z === tileMap[Math.floor(x)][Math.floor(y)].length - 1) {
+
+                            context.globalAlpha = 0.5;
+                            context.fillStyle = 'blue';
+                            context.fillRect(x*64-32 - cameraX*64, y*48+24 - z*64 - cameraY*48, 64, 64);
+
+                        }
+
+                    } else {
+
+                        if (tileMap[Math.floor(x)][Math.floor(y)][z] >= 0 && tileMap[Math.floor(x)][Math.floor(y)][z] <= TILE_COUNT) {
+
+                            let t = tiles[tileMap[Math.floor(x)][Math.floor(y)][z]];
+
+                            context.globalAlpha = 1;
+
+                            context.fillStyle = 'black';
+                            context.fillRect(x*64-32 - cameraX*64, y*48+24 - z*64 - cameraY*48, 64, 64);
+
+                            context.globalAlpha = 0.75;
+                            context.drawImage(t, 0,0,TILE_SOURCE_SIZE,TILE_SOURCE_SIZE, x*64-32 - cameraX*64, y*48+24 - z*64 - cameraY*48, 64, 64);
+
+                        }
                     }
 
                 }
-              }
+
             }
-      }
+
+        }
+
     }
 
     context.fillStyle = "navy";
