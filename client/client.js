@@ -4,6 +4,9 @@ const MAP_SIZE = 128;
 const TILE_SOURCE_SIZE = 64;
 let w = 0, h = 0;
 let cameraX = 0, cameraY = 0;
+let showControls = true;
+let showTiles = false;
+let mousePosition = {x: 0, y: 0};
 
 const moveTime = 200;
 const chatLifespan = 2000;
@@ -102,6 +105,10 @@ function checkChoices() {
       alert("Please choose a name!");
       return;
     }
+    if (document.getElementById("avatarName").value.length > 64) {
+      alert("Your name is too long!");
+      return;
+    }
     document.getElementById("content").style.display = "none";
     document.getElementById("avatarCanvas").style.display = "block";
 
@@ -145,6 +152,13 @@ function joinGame() {
     window.addEventListener("resize", fixSize);
     window.requestAnimationFrame(gameFrame);
 
+    const canvas = document.getElementById('avatarCanvas');
+
+    canvas.addEventListener('mousemove', event => {
+        mousePosition.x = event.clientX;
+        mousePosition.y = event.clientY;
+    }, false);
+
 }
 
 
@@ -172,22 +186,44 @@ function gameFrame(frameTime) {
 
             let moved = false;
 
-            if (pressedKeys["Enter"] && !chatting) {
+            if (pressedKeys["Enter"] && !(chatting || showTiles)) {
                 chatting = true;
                 document.getElementById("chat").style.display = "block";
                 document.getElementById("chattext").focus();
             }
 
-            if (!chatting) {
+            if (!showTiles && (pressedKeys["t"] || pressedKeys["T"])) {
+                showTiles = true;
+            }
+
+            if (showTiles) {
+
+              selectedTile = Math.floor(mousePosition.y / 96) * Math.floor(w / 96) + Math.floor(mousePosition.x / 96);
+
+              if (selectedTile < 0) selectedTile = 0;
+              if (selectedTile >= TILE_COUNT) selectedTile = TILE_COUNT - 1;
+
+              if (!(pressedKeys["t"] || pressedKeys["T"])) {
+                showTiles = false;
+              }
+
+            }
+
+            if (!(chatting || showTiles)) {
 
                 let x = Math.floor(avatars[myId].currentX);
                 let y = Math.floor(avatars[myId].currentY);
 
-                if ((pressedKeys["w"] || pressedKeys["W"]) && y > 0) {
+                if (pressedKeys["h"]) {
+                  if (!blockPlace) {
+                    showControls = !showControls;
+                  }
+                  blockPlace = true;
+                } else if ((pressedKeys["w"] || pressedKeys["W"]) && y > 0) {
                     if (!blockPlace) {
                         if (pressedKeys["`"]) {
                             pendingTileChanges.push({x: x, y: y-1, tile: -2})
-                        } else if (pressedKeys["Delete"]) {
+                        } else if (pressedKeys["Delete"] || pressedKeys["Backspace"]) {
                             pendingTileChanges.push({x: x, y: y-1, tile: -1})
                         } else if (pressedKeys["Insert"]) {
                             if (tileMap[x][y-1].length > 0) {
@@ -202,7 +238,7 @@ function gameFrame(frameTime) {
                     if (!blockPlace) {
                       if (pressedKeys["`"]) {
                           pendingTileChanges.push({x: x, y: y+1, tile: -2})
-                      } else if (pressedKeys["Delete"]) {
+                      } else if (pressedKeys["Delete"] || pressedKeys["Backspace"]) {
                           pendingTileChanges.push({x: x, y: y+1, tile: -1})
                       } else if (pressedKeys["Insert"]) {
                           if (tileMap[x][y+1].length > 0) {
@@ -217,7 +253,7 @@ function gameFrame(frameTime) {
                     if (!blockPlace) {
                       if (pressedKeys["`"]) {
                           pendingTileChanges.push({x: x-1, y: y, tile: -2})
-                      } else if (pressedKeys["Delete"]) {
+                      } else if (pressedKeys["Delete"] || pressedKeys["Backspace"]) {
                           pendingTileChanges.push({x: x-1, y: y, tile: -1})
                       } else if (pressedKeys["Insert"]) {
                           if (tileMap[x-1][y].length > 0) {
@@ -232,7 +268,7 @@ function gameFrame(frameTime) {
                     if (!blockPlace) {
                       if (pressedKeys["`"]) {
                           pendingTileChanges.push({x: x+1, y: y, tile: -2})
-                      } else if (pressedKeys["Delete"]) {
+                      } else if (pressedKeys["Delete"] || pressedKeys["Backspace"]) {
                           pendingTileChanges.push({x: x+1, y: y, tile: -1})
                       } else if (pressedKeys["Insert"]) {
                           if (tileMap[x+1][y].length > 0) {
@@ -257,7 +293,7 @@ function gameFrame(frameTime) {
                       if (pressedKeys["8"]) z = 10;
                       if (pressedKeys["9"]) z = 11;
                       if (pressedKeys["f"] || pressedKeys["F"]) z = 0;
-                      if (pressedKeys["Delete"]) {
+                      if (pressedKeys["Delete"] || pressedKeys["Backspace"]) {
                           pendingTileChanges.push({x: x, y: y, tile: -1, z})
                       } else if (pressedKeys["Insert"]) {
                           if (tileMap[x][y].length > 0) {
@@ -268,27 +304,15 @@ function gameFrame(frameTime) {
                       }
                     }
                     blockPlace = true;
-                } else if ((pressedKeys["q"] || pressedKeys["Q"])) {
+                } else if (pressedKeys["PageUp"]) {
                     if (!blockPlace) {
                       selectedTile -= 1;
                       if (selectedTile < 0) selectedTile = tiles.length-1;
                     }
                     blockPlace = true;
-                } else if ((pressedKeys["e"] || pressedKeys["E"])) {
-                    if (!blockPlace) {
-                      selectedTile += 1;
-                      if (selectedTile >= tiles.length-1) selectedTile = 0;
-                    }
-                    blockPlace = true;
-                } else if (pressedKeys["PageUp"]) {
-                    if (!blockPlace) {
-                      selectedTile -= 10;
-                      if (selectedTile < 0) selectedTile = tiles.length-1;
-                    }
-                    blockPlace = true;
                 } else if (pressedKeys["PageDown"]) {
                     if (!blockPlace) {
-                      selectedTile += 10;
+                      selectedTile += 1;
                       if (selectedTile >= tiles.length-1) selectedTile = 0;
                     }
                     blockPlace = true;
@@ -449,7 +473,7 @@ function gameFrame(frameTime) {
 
             if (offScreen) continue;
 
-            let hideForeground = pressedKeys["Shift"] && !chatting && avatars[myId] !== undefined && y > Math.floor(avatars[myId].currentY);
+            let hideForeground = pressedKeys["Shift"] && !(chatting || showTiles) && avatars[myId] !== undefined && y > Math.floor(avatars[myId].currentY);
             if (hideForeground && z > 0) continue;
 
             for (let x =  Math.floor(cameraX); x <=  Math.floor(cameraX) + w/64 + 1; x++) {
@@ -499,7 +523,7 @@ function gameFrame(frameTime) {
 
               }
 
-              if (z === 0 && pressedKeys["Shift"] && !chatting && tileMap[Math.floor(x)] !== undefined && tileMap[Math.floor(x)][Math.floor(y)] !== undefined) {
+              if (z === 0 && pressedKeys["Shift"] && !(chatting || showTiles) && tileMap[Math.floor(x)] !== undefined && tileMap[Math.floor(x)][Math.floor(y)] !== undefined) {
                 context.fillStyle = 'blue';
                 context.font = '10px Arial';
                 context.textAlign = 'center';
@@ -508,7 +532,7 @@ function gameFrame(frameTime) {
 
             }
 
-            if (z === 0 && pressedKeys["Shift"] && !chatting) {
+            if (z === 0 && pressedKeys["Shift"] && !(chatting || showTiles)) {
               if (avatars[myId] !== undefined && Math.floor(avatars[myId].currentY) === y) {
                 context.globalAlpha = 0.5;
                 context.fillStyle = "red";
@@ -519,7 +543,7 @@ function gameFrame(frameTime) {
 
           }
 
-          if (!(pressedKeys["Shift"] && chatting) && y < Math.floor(cameraY) + h/48 + 1) {
+          if (!(pressedKeys["Shift"] && (chatting || showTiles)) && y < Math.floor(cameraY) + h/48 + 1) {
 
                 for (let x = Math.floor(cameraX); x <=  Math.floor(cameraX) + w/64 + 1; x++) {
                   for (let z = 0; z < 16; z++) {
@@ -566,7 +590,7 @@ function gameFrame(frameTime) {
 
                 if (offScreen) continue;
 
-                let hideForeground = pressedKeys["Shift"] && !chatting && avatars[myId] !== undefined && y > Math.floor(avatars[myId].currentY);
+                let hideForeground = pressedKeys["Shift"] && !(chatting || showTiles) && avatars[myId] !== undefined && y > Math.floor(avatars[myId].currentY);
                 if (hideForeground && z > 0) continue;
 
                 if (tileMap[Math.floor(x)] !== undefined && tileMap[Math.floor(x)][Math.floor(y)] !== undefined &&
@@ -607,14 +631,58 @@ function gameFrame(frameTime) {
 
     }
 
-    context.fillStyle = "navy";
-    context.fillRect(10,10,84,84);
-    context.drawImage(tiles[selectedTile], 0,0,TILE_SOURCE_SIZE,TILE_SOURCE_SIZE, 20, 20, 64, 64);
+    if (!showTiles) {
 
-    //context.fillStyle = 'white';
-    //context.font = '36px Arial';
-    //context.textAlign = 'left';
-    //context.fillText("Camera: " + cameraX + ", " + cameraY, 300, 100);
+      context.fillStyle = "navy";
+      context.fillRect(10,10,84,84);
+      context.drawImage(tiles[selectedTile], 0,0,TILE_SOURCE_SIZE,TILE_SOURCE_SIZE, 20, 20, 64, 64);
+
+    } else {
+
+      context.fillStyle = "black";
+      context.globalAlpha = 0.5;
+      context.fillRect(0,0,w,h);
+
+      context.globalAlpha = 1;
+
+      let i = 0, j = 0;
+      for (let t = 0; t < TILE_COUNT; t++) {
+
+          if (t === selectedTile) {
+            context.fillStyle = "white";
+          } else {
+            context.fillStyle = "navy";
+          }
+
+          context.fillRect(i + 8, j + 8, 80, 80);
+          context.drawImage(tiles[t], i + 16, j + 16);
+
+          i += 96;
+          if (i + 96 > w) {
+            j += 96;
+            i = 0;
+          }
+      }
+
+    }
+
+    if (showControls && !showTiles) {
+
+      context.fillStyle = 'white';
+      context.textAlign = 'right';
+
+      let s = 30;
+
+      context.font = 'bold 18px Arial';
+      context.fillText("Controls (H to hide)", w-10, s); s += 20;
+
+      context.font = '18px Arial';
+      context.fillText("Arrow keys - Move", w-10, s); s += 20;
+      context.fillText("WSAD - Place blocks adjacent", w-10, s); s += 20;
+      context.fillText("1-9 - Place blocks overhead", w-10, s); s += 20;
+      context.fillText("Delete or Backspace + WSAD - Delete topmost adjacent block", w-10, s); s += 20;
+
+    }
 
     window.requestAnimationFrame(gameFrame);
 
