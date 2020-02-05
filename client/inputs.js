@@ -9,6 +9,14 @@ let pathTargetX = null, pathTargetY = null;
 let chatting = false;
 let pendingTileChanges = [];
 
+const NORMAL_MODE = 0;
+const DELETE_MODE = 1;
+const PICK_MODE = 2;
+const NULL_MODE = 3;
+const EXCAVATE_MODE = 4;
+const REFILL_MODE = 5;
+let mode = NORMAL_MODE;
+
 function processInputs() {
 
     //console.log("*** Procesing inputs ***");
@@ -66,68 +74,142 @@ function processInputs() {
                     showControls = !showControls;
                   }
                   blockPlace = true;
-                } else if ((pressedKeys["w"] || pressedKeys["W"]) && y > 0) {
+                } else if (pressedKeys["Escape"]) {
+                  if (!blockPlace) {
+                    mode = NORMAL_MODE;
+                  }
+                  blockPlace = true;
+              } else if (pressedKeys["x"] || pressedKeys["X"]) {
+                  if (!blockPlace) {
+                    mode = DELETE_MODE;
+                  }
+                  blockPlace = true;
+              } else if (pressedKeys["z"] || pressedKeys["Z"]) {
+                  if (!blockPlace) {
+                    mode = NULL_MODE;
+                  }
+                  blockPlace = true;
+              } else if (pressedKeys["q"] || pressedKeys["Q"]) {
+                  if (!blockPlace) {
+                    mode = PICK_MODE;
+                  }
+                  blockPlace = true;
+              } else if (pressedKeys["e"] || pressedKeys["E"]) {
+                  if (!blockPlace) {
+                    mode = EXCAVATE_MODE;
+                  }
+                  blockPlace = true;
+              } else if (pressedKeys["r"] || pressedKeys["R"]) {
+                  if (!blockPlace) {
+                    mode = REFILL_MODE;
+                  }
+                  blockPlace = true;
+              } else if ((pressedKeys["w"] || pressedKeys["W"]) && y > 0) {
                     if (!blockPlace) {
-                        if (pressedKeys["`"]) {
+                        if (mode === NULL_MODE) {
                             pendingTileChanges.push({x: x, y: y-1, tile: -2});
-                        } else if (pressedKeys["Delete"] || pressedKeys["Backspace"]) {
+                        } else if (mode === DELETE_MODE) {
                             pendingTileChanges.push({x: x, y: y-1, tile: -1});
-                        } else if (pressedKeys["Insert"]) {
+                        } else if (mode === PICK_MODE) {
                             if (tileMap[x][y-1].length > 0) {
                                 selectedTile = tileMap[x][y-1][tileMap[x][y-1].length - 1];
+                                mode = NORMAL_MODE;
                             }
-                        } else {
+                        } else if (mode === EXCAVATE_MODE) {
+                            if (tileMap[x][y-1].length > 2) {
+                                pendingTileChanges.push({x: x, y: y-1, tile: -2, z: 1});
+                                pendingTileChanges.push({x: x, y: y-1, tile: -2, z: 2});
+                            }
+                        } else if (mode === REFILL_MODE) {
+                            if (tileMap[x][y-1].length >= 2) {
+                                pendingTileChanges.push({x: x, y: y-1, tile: selectedTile, z: 1});
+                                pendingTileChanges.push({x: x, y: y-1, tile: selectedTile, z: 2});
+                            }
+                        } else if (mode === NORMAL_MODE) {
                             pendingTileChanges.push({x: x, y: y-1, tile: selectedTile});
                         }
                     }
                     blockPlace = true;
                 } else if ((pressedKeys["s"] || pressedKeys["S"]) && y < MAP_SIZE) {
                     if (!blockPlace) {
-                      if (pressedKeys["`"]) {
+                      if (mode === NULL_MODE) {
                           pendingTileChanges.push({x: x, y: y+1, tile: -2});
-                      } else if (pressedKeys["Delete"] || pressedKeys["Backspace"]) {
+                      } else if (mode === DELETE_MODE) {
                           pendingTileChanges.push({x: x, y: y+1, tile: -1});
-                      } else if (pressedKeys["Insert"]) {
+                      } else if (mode === PICK_MODE) {
                           if (tileMap[x][y+1].length > 0) {
                               selectedTile = tileMap[x][y+1][tileMap[x][y+1].length - 1];
+                              mode = NORMAL_MODE;
                           }
-                      } else {
+                      } else if (mode === EXCAVATE_MODE) {
+                          if (tileMap[x][y+1].length > 2) {
+                              pendingTileChanges.push({x: x, y: y+1, tile: -2, z: 1});
+                              pendingTileChanges.push({x: x, y: y+1, tile: -2, z: 2});
+                          }
+                      } else if (mode === REFILL_MODE) {
+                          if (tileMap[x][y+1].length >= 2) {
+                              pendingTileChanges.push({x: x, y: y+1, tile: selectedTile, z: 1});
+                              pendingTileChanges.push({x: x, y: y+1, tile: selectedTile, z: 2});
+                          }
+                      } else if (mode === NORMAL_MODE) {
                           pendingTileChanges.push({x: x, y: y+1, tile: selectedTile});
                       }
                     }
                     blockPlace = true;
                 } else if ((pressedKeys["a"] || pressedKeys["A"]) && x > 0) {
                     if (!blockPlace) {
-                      if (pressedKeys["`"]) {
+                      if (mode === NULL_MODE) {
                           pendingTileChanges.push({x: x-1, y: y, tile: -2});
-                      } else if (pressedKeys["Delete"] || pressedKeys["Backspace"]) {
+                      } else if (mode === DELETE_MODE) {
                           pendingTileChanges.push({x: x-1, y: y, tile: -1});
-                      } else if (pressedKeys["Insert"]) {
+                      } else if (mode === PICK_MODE) {
                           if (tileMap[x-1][y].length > 0) {
                               selectedTile = tileMap[x-1][y][tileMap[x-1][y].length - 1];
+                              mode = NORMAL_MODE;
                           }
-                      } else {
+                      } else if (mode === EXCAVATE_MODE) {
+                          if (tileMap[x-1][y].length > 2) {
+                              pendingTileChanges.push({x: x-1, y: y, tile: -2, z: 1});
+                              pendingTileChanges.push({x: x-1, y: y, tile: -2, z: 2});
+                          }
+                      } else if (mode === REFILL_MODE) {
+                          if (tileMap[x-1][y].length >= 2) {
+                              pendingTileChanges.push({x: x-1, y: y, tile: selectedTile, z: 1});
+                              pendingTileChanges.push({x: x-1, y: y, tile: selectedTile, z: 2});
+                          }
+                      } else if (mode === NORMAL_MODE) {
                           pendingTileChanges.push({x: x-1, y: y, tile: selectedTile});
                       }
                     }
                     blockPlace = true;
                 } else if ((pressedKeys["d"] || pressedKeys["D"]) && y < MAP_SIZE) {
                     if (!blockPlace) {
-                      if (pressedKeys["`"]) {
+                      if (mode === NULL_MODE) {
                           pendingTileChanges.push({x: x+1, y: y, tile: -2});
-                      } else if (pressedKeys["Delete"] || pressedKeys["Backspace"]) {
+                      } else if (mode === DELETE_MODE) {
                           pendingTileChanges.push({x: x+1, y: y, tile: -1});
-                      } else if (pressedKeys["Insert"]) {
+                      } else if (mode === PICK_MODE) {
                           if (tileMap[x+1][y].length > 0) {
                               selectedTile = tileMap[x+1][y][tileMap[x+1][y].length - 1];
+                              mode = NORMAL_MODE;
                           }
-                      } else {
+                      } else if (mode === EXCAVATE_MODE) {
+                          if (tileMap[x+1][y].length > 2) {
+                              pendingTileChanges.push({x: x+1, y: y, tile: -2, z: 1});
+                              pendingTileChanges.push({x: x+1, y: y, tile: -2, z: 2});
+                          }
+                      } else if (mode === REFILL_MODE) {
+                          if (tileMap[x+1][y].length >= 2) {
+                              pendingTileChanges.push({x: x+1, y: y, tile: selectedTile, z: 1});
+                              pendingTileChanges.push({x: x+1, y: y, tile: selectedTile, z: 2});
+                          }
+                      } else if (mode === NORMAL_MODE) {
                           pendingTileChanges.push({x: x+1, y: y, tile: selectedTile});
                       }
                     }
                     blockPlace = true;
                 } else if (pressedKeys["1"] || pressedKeys["2"] || pressedKeys["3"] || pressedKeys["4"] || pressedKeys["5"] ||
-                            pressedKeys["6"] || pressedKeys["7"] || pressedKeys["8"] || pressedKeys["9"] || pressedKeys["f"] || pressedKeys["F"]) {
+                            pressedKeys["6"] || pressedKeys["7"] || pressedKeys["8"] || pressedKeys["9"] || pressedKeys[" "]) {
                     if (!blockPlace) {
                       let z;
                       if (pressedKeys["1"]) z = 3;
@@ -139,16 +221,17 @@ function processInputs() {
                       if (pressedKeys["7"]) z = 9;
                       if (pressedKeys["8"]) z = 10;
                       if (pressedKeys["9"]) z = 11;
-                      if (pressedKeys["f"] || pressedKeys["F"]) z = 0;
-                      if (pressedKeys["`"]) {
+                      if (pressedKeys[" "]) z = 0;
+                      if (mode === NULL_MODE) {
                           pendingTileChanges.push({x: x, y: y, tile: -2, z});
-                      } else if (pressedKeys["Delete"] || pressedKeys["Backspace"]) {
+                      } else if (mode === DELETE_MODE) {
                           pendingTileChanges.push({x: x, y: y, tile: -1, z});
-                      } else if (pressedKeys["Insert"]) {
+                      } else if (mode === PICK_MODE) {
                           if (tileMap[x][y].length > 0) {
                               selectedTile = tileMap[x][y][tileMap[x][y].length - 1];
+                              mode = NORMAL_MODE;
                           }
-                      } else {
+                      } else if (mode === NORMAL_MODE) {
                           pendingTileChanges.push({x: x, y: y, tile: selectedTile, z})
                       }
                     }

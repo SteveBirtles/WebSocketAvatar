@@ -22,6 +22,36 @@ function drawCurrentTile(context) {
   context.fillRect(8,8,80,80);
   context.drawImage(tiles[selectedTile], 0,0,TILE_SOURCE_SIZE,TILE_SOURCE_SIZE, 16, 16, 64, 64);
 
+  context.fillStyle = 'blue';
+  context.textAlign = 'center';
+  context.font = 'bold 16px Arial';
+  let modeString;
+  switch (mode) {
+      case DELETE_MODE:
+        modeString = "DELETE";
+        context.fillStyle = 'red';
+        break;
+      case PICK_MODE:
+        modeString = "PICK";
+        context.fillStyle = 'green';
+        break;
+      case NULL_MODE:
+        modeString = "NULL";
+        context.fillStyle = 'cyan';
+        break;
+      case EXCAVATE_MODE:
+        modeString = "EXCAVATE";
+        context.fillStyle = 'orange';
+        break;
+      case REFILL_MODE:
+        modeString = "REFILL";
+        context.fillStyle = 'magenta';
+        break;
+    default:
+        modeString = "NORMAL";
+    }
+    context.fillText(modeString, 48, 105);
+
 }
 
 function drawTiles(context) {
@@ -70,16 +100,18 @@ function drawControls(context) {
     context.fillText("Enter - Chat", w-10, s); s += 30;
 
     context.fillText("WSAD - Place blocks adjacent", w-10, s); s += 20;
-    context.fillText("Delete or Backspace & WSAD - Delete topmost adjacent block", w-10, s); s += 20;
-    context.fillText("Backtick & WSAD - Place 'null' block", w-10, s); s += 20;
-    context.fillText("Insert & WSAD - Pick block", w-10, s); s += 30;
-
-    context.fillText("F - Place floor tile", w-10, s); s += 20;
+    context.fillText("Space - Place floor tile", w-10, s); s += 20;
     context.fillText("1-9 - Place blocks overhead", w-10, s); s += 20;
-    context.fillText("Delete, Insert and Backtick modifiders also work with 1-9", w-10, s); s += 30;
 
-    context.fillText("PageUp / PageDown or T & Mouse - Select block tile", w-10, s); s += 20;
-    context.fillText("Shift - X-Ray mode", w-10, s); s += 20;
+    context.fillText("X - Delete mode", w-10, s); s += 20;
+    context.fillText("Z - Null mode", w-10, s); s += 20;
+    context.fillText("Q - Pick mode (Just one)", w-10, s); s += 20;
+    context.fillText("E - Excavate mode", w-10, s); s += 20;
+    context.fillText("R - Refill mode", w-10, s); s += 20;
+    context.fillText("Escape - Normal mode", w-10, s); s += 30;
+
+    context.fillText("T (Hold) & Mouse or PageUp / PageDown - Select block tile", w-10, s); s += 20;
+    context.fillText("Shift (Hold) - X-Ray mode", w-10, s); s += 20;
 
     context.textAlign = 'center';
     context.fillText(mouseX + ", " + mouseY, mousePosition.x, mousePosition.y);
