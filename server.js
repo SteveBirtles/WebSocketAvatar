@@ -136,7 +136,7 @@ wsServer.on('connection', client => {
                         tileMap[x][y][z] = null;
                     }
                     if (tileMap[x][y].length === 1 && tileMap[x][y][0] === null) tileMap[x][y][z] = [];
-                } else if (tileMap[x][y].length < 12) {
+                } else {
                     if (data.tile === -2) data.tile = null;
                     if (z < tileMap[x][y].length) {
                         tileMap[x][y][z] = data.tile;
@@ -186,7 +186,19 @@ wsServer.on('connection', client => {
             if (data.hasOwnProperty("chattime")) avatars[client.id].chattime = data.chattime;
 
             if (data.hasOwnProperty("image")) avatars[client.id].image = data.image;
-            if (data.hasOwnProperty("name")) avatars[client.id].name = data.name;
+
+            if (data.hasOwnProperty("name")) {
+
+                let count = 0;
+                for (let id of Object.keys(avatars)) {
+                    if (id !== client.id && avatars[id].originalName === data.name) count++;
+                }
+
+                avatars[client.id].originalName = data.name;
+                if (count > 0) data.name += " (" + (count + 1) + ")";
+                avatars[client.id].name = data.name;
+
+            }
 
             sendAvatar(client.id, wsServer.clients);
 

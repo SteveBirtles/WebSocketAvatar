@@ -106,7 +106,8 @@ function joinGame() {
     connection = new WebSocket(protocol + '//' + host + ':' + port);
 
     connection.addEventListener('message', receiveMessage);
-    connection.addEventListener('error', event => alert(event));
+    connection.addEventListener('error', () => alert("There was an error connecting to the server."));
+    connection.addEventListener('close', () => alert("Connection to the server was lost."));
 
     window.addEventListener("keydown", event => pressedKeys[event.key] = true);
     window.addEventListener("keyup", event => pressedKeys[event.key] = false);
@@ -139,6 +140,12 @@ function joinGame() {
     canvas.oncontextmenu = function (e) {
         e.preventDefault();
     };
+
+    canvas.addEventListener('wheel', event => {
+        selectedTile += Math.sign(event.deltaY);
+        if (selectedTile < 0) selectedTile += TILE_COUNT;
+        if (selectedTile >= TILE_COUNT) selectedTile -= TILE_COUNT;
+    }, false);
 
     fixSize();
     window.addEventListener("resize", fixSize);

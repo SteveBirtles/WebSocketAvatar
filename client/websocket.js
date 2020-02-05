@@ -3,7 +3,11 @@ let connection;
 function chat(event) {
 
     if (event.key == "Enter" && event.target.value != "") {
-        let chatData = {chat: event.target.value, chattime: worldTime + chatLifespan}
+
+        let text = event.target.value;
+        if (text.length > 128) text = text.substring(0, 128);
+
+        let chatData = {chat: text, chattime: worldTime + chatLifespan}
         connection.send(JSON.stringify(chatData));
 
         event.target.value = "";

@@ -56,6 +56,8 @@ function drawCurrentTile(context) {
 
 function drawTiles(context) {
 
+    tileMapSize = Math.floor(Math.sqrt((w * (h - 64)) / TILE_COUNT) - 1);
+
     context.fillStyle = "black";
     context.globalAlpha = 0.5;
     context.fillRect(0,0,w,h);
@@ -71,12 +73,12 @@ function drawTiles(context) {
           context.fillStyle = "navy";
         }
 
-        context.fillRect(i + 8, j + 8, 80, 80);
-        context.drawImage(tiles[t], i + 16, j + 16);
+        context.fillRect(i + 8, j + 8, tileMapSize-16, tileMapSize-16);
+        context.drawImage(tiles[t], 0, 0, TILE_SOURCE_SIZE, TILE_SOURCE_SIZE, i + 16, j + 16, tileMapSize-32, tileMapSize-32);
 
-        i += 96;
-        if (i + 96 > w) {
-          j += 96;
+        i += tileMapSize;
+        if (i + tileMapSize > w) {
+          j += tileMapSize;
           i = 0;
         }
     }
@@ -97,13 +99,14 @@ function drawControls(context) {
     context.fillText("Arrow keys - Move", w-10, s); s += 20;
     context.fillText("Left Click - Path Move", w-10, s); s += 20;
     context.fillText("Right Click - Cancel Path", w-10, s); s += 20;
-    context.fillText("Enter - Chat", w-10, s); s += 30;
+    context.fillText("C - Chat (Escape to cancel)", w-10, s); s += 20;
+    context.fillText("Enter - Place sign (Escape to cancel)", w-10, s); s += 30;
 
     context.fillText("WSAD - Place blocks adjacent", w-10, s); s += 20;
     context.fillText("Space - Place floor tile", w-10, s); s += 20;
-    context.fillText("1-9 - Place blocks overhead", w-10, s); s += 20;
+    context.fillText("1-9 - Place blocks overhead", w-10, s); s += 30;
 
-    context.fillText("X - Delete mode", w-10, s); s += 20;
+    context.fillText("X or Delete - Delete mode", w-10, s); s += 20;
     context.fillText("Z - Null mode", w-10, s); s += 20;
     context.fillText("Q - Pick mode (Just one)", w-10, s); s += 20;
     context.fillText("E - Excavate mode", w-10, s); s += 20;

@@ -38,11 +38,11 @@ function gameFrame(frameTime) {
 
     renderWorld(context);
 
-    if (!(showTiles || chatting)) drawCurrentTile(context);
+    if (!(showTiles || chatting || miniMap)) drawCurrentTile(context);
 
     if (showTiles) drawTiles(context);
 
-    if (showControls && !showTiles) drawControls(context);
+    if (showControls && !showTiles && !miniMap) drawControls(context);
 
     window.requestAnimationFrame(gameFrame);
 
