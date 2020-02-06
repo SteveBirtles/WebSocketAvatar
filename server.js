@@ -6,6 +6,7 @@ const express = require('express');
 const http = require('http');
 const ws = require('ws');
 const fs = require('fs');
+const {NodeVM} = require('vm2');
 
 const app = express();
 const server = http.createServer(app);
@@ -13,8 +14,8 @@ const wsServer = new ws.Server({server});
 
 let serverStartTime;
 let clientCount = 0;
-let avatars = {};
 
+let avatars = {};
 let tileMap = [];
 
 if (fs.existsSync(MAP_FILE)) {
@@ -24,6 +25,24 @@ if (fs.existsSync(MAP_FILE)) {
     fs.readFile('map.json', 'utf8', function(err, raw) {
         if (err) throw err;
         tileMap = JSON.parse(raw);
+
+        let sandbox = {output: []};
+
+        const vm = new NodeVM({sandbox});
+
+        vm.freeze(tileMap, 'tileMap');
+        vm.freeze(avatars, 'avatars');
+
+        vm.run(`
+            for (let x = 0; x < tileMap.length; x++) {
+                for (let y = 0; y < tileMap[x].length; y++) {
+                    output.push(tileMap[x][y].length);
+                }
+            }
+        `);
+
+        console.log(sandbox.output);
+
     })
 
 } else {
@@ -41,6 +60,7 @@ if (fs.existsSync(MAP_FILE)) {
         if (err) throw err;
     });
 }
+
 
 const port = 8081;
 
