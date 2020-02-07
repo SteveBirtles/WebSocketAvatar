@@ -219,9 +219,23 @@ wsServer.on('connection', client => {
                   tileMap[avatars[client.id].x][avatars[client.id].y][1] === null &&
                   tileMap[avatars[client.id].x][avatars[client.id].y][2] === null)) reset = true;
 
+              let d = Math.pow(lastX - avatars[client.id].x, 2) + Math.pow(lastY - avatars[client.id].y, 2);
+              if (d >= 2) {
+                reset = 2;
+              }
+
               for (let id of Object.keys(avatars)) {
                   if (id === String(client.id)) continue;
                   if (avatars[id].x === avatars[client.id].x && avatars[id].y === avatars[client.id].y) reset = true;
+              }
+
+
+              if (data.hasOwnProperty("t")) {
+                  avatars[client.id].t = data.t;
+                  avatar.t = data.t;
+                  if (data.t < Date.now() + 200) {
+                      reset = true;
+                  }
               }
 
               if (reset) {
@@ -231,16 +245,14 @@ wsServer.on('connection', client => {
                   avatar.y = lastY;
               }
 
-              if (data.hasOwnProperty("t")) {
-                  avatars[client.id].t = data.t;
-                  avatar.t = data.t;
-              }
-
               if (data.hasOwnProperty("chat")) {
                   avatars[client.id].chat = data.chat;
                   avatar.chat = data.chat;
               }
               if (data.hasOwnProperty("chattime")) {
+                  if (data.chattime > Date.now() + 2000) {
+                      data.chattime = Date.now() + 2000;
+                  }
                   avatars[client.id].chattime = data.chattime;
                   avatar.chattime = data.chattime;
               }
