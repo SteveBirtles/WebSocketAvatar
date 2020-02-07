@@ -137,132 +137,140 @@ wsServer.on('connection', client => {
 
     client.on('message', message => {
 
-        let data = JSON.parse(message);
+        try {
 
-        console.log(client.id + " --> " + message);
+          let data = JSON.parse(message);
 
-        if (data.hasOwnProperty("tile")) {
+          console.log(client.id + " --> " + message);
 
-            let x, y, z;
+          if (data.hasOwnProperty("tile")) {
 
-            if (data.hasOwnProperty("x")) x = data.x;
-            if (x < 1) x = 1;
-            if (x > MAP_SIZE-1) x = MAP_SIZE-1;
+              let x, y, z;
 
-            if (data.hasOwnProperty("y")) y = data.y;
-            if (y < 1) y = 1;
-            if (y > MAP_SIZE-1) y = MAP_SIZE-1;
+              if (data.hasOwnProperty("x")) x = data.x;
+              if (x < 1) x = 1;
+              if (x > MAP_SIZE-1) x = MAP_SIZE-1;
 
-            if (data.hasOwnProperty("z")) z = data.z;
-            if (z < 0) z = 0;
-            if (z > 11) z = 11;
+              if (data.hasOwnProperty("y")) y = data.y;
+              if (y < 1) y = 1;
+              if (y > MAP_SIZE-1) y = MAP_SIZE-1;
 
-            if (x !== undefined && y !== undefined) {
-                if (data.tile === -1 && tileMap[x][y].length > 0) {
-                    if (z === tileMap[x][y].length - 1) {
-                        tileMap[x][y].pop();
-                        let n = tileMap[x][y].length - 1;
-                        while (n >= 0) {
-                            if (tileMap[x][y][n] == null) {
-                                tileMap[x][y].pop();
-                            } else {
-                                break;
-                            }
-                            n--;
-                        }
-                    } else {
-                        tileMap[x][y][z] = null;
-                    }
-                    if (tileMap[x][y].length === 1 && tileMap[x][y][0] === null) tileMap[x][y][z] = [];
-                } else {
-                    if (data.tile === -2) data.tile = null;
-                    if (z < tileMap[x][y].length) {
-                        tileMap[x][y][z] = data.tile;
-                    } else {
-                        for (let n = tileMap[x][y].length; n < z; n++) {
-                            tileMap[x][y].push(null);
-                        }
-                        tileMap[x][y].push(data.tile);
-                    }
-                }
+              if (data.hasOwnProperty("z")) z = data.z;
+              if (z < 0) z = 0;
+              if (z > 11) z = 11;
 
-                sendTileStack(x, y, tileMap[x][y], wsServer.clients);
-            }
+              if (x !== undefined && y !== undefined) {
+                  if (data.tile === -1 && tileMap[x][y].length > 0) {
+                      if (z === tileMap[x][y].length - 1) {
+                          tileMap[x][y].pop();
+                          let n = tileMap[x][y].length - 1;
+                          while (n >= 0) {
+                              if (tileMap[x][y][n] == null) {
+                                  tileMap[x][y].pop();
+                              } else {
+                                  break;
+                              }
+                              n--;
+                          }
+                      } else {
+                          tileMap[x][y][z] = null;
+                      }
+                      if (tileMap[x][y].length === 1 && tileMap[x][y][0] === null) tileMap[x][y][z] = [];
+                  } else {
+                      if (data.tile === -2) data.tile = null;
+                      if (z < tileMap[x][y].length) {
+                          tileMap[x][y][z] = data.tile;
+                      } else {
+                          for (let n = tileMap[x][y].length; n < z; n++) {
+                              tileMap[x][y].push(null);
+                          }
+                          tileMap[x][y].push(data.tile);
+                      }
+                  }
 
-        } else {
+                  sendTileStack(x, y, tileMap[x][y], wsServer.clients);
+              }
 
-            let lastX = avatars[client.id].x;
-            let lastY = avatars[client.id].y;
-            let reset = false;
+          } else {
 
-            let avatar = {id: client.id};
+              let lastX = avatars[client.id].x;
+              let lastY = avatars[client.id].y;
+              let reset = false;
 
-            if (data.hasOwnProperty("x")) {
-                avatar.x = data.x;
-                avatars[client.id].x = data.x;
-            }
+              let avatar = {id: client.id};
 
-            if (data.hasOwnProperty("y")) {
-                avatar.y = data.y;
-                avatars[client.id].y = data.y;
-            }
+              if (data.hasOwnProperty("x")) {
+                  avatar.x = data.x;
+                  avatars[client.id].x = data.x;
+              }
 
-            if (avatars[client.id].x < 1 ||
-                avatars[client.id].x > MAP_SIZE-1 ||
-                avatars[client.id].y < 1 ||
-                avatars[client.id].y > MAP_SIZE-1) reset = true;
+              if (data.hasOwnProperty("y")) {
+                  avatar.y = data.y;
+                  avatars[client.id].y = data.y;
+              }
 
-            if (tileMap[avatars[client.id].x][avatars[client.id].y].length > 1 && !(
-                tileMap[avatars[client.id].x][avatars[client.id].y].length >= 3 &&
-                tileMap[avatars[client.id].x][avatars[client.id].y][1] === null &&
-                tileMap[avatars[client.id].x][avatars[client.id].y][2] === null)) reset = true;
+              if (avatars[client.id].x < 1 ||
+                  avatars[client.id].x > MAP_SIZE-1 ||
+                  avatars[client.id].y < 1 ||
+                  avatars[client.id].y > MAP_SIZE-1) reset = true;
 
-            for (let id of Object.keys(avatars)) {
-                if (id === String(client.id)) continue;
-                if (avatars[id].x === avatars[client.id].x && avatars[id].y === avatars[client.id].y) reset = true;
-            }
+              if (tileMap[avatars[client.id].x][avatars[client.id].y].length > 1 && !(
+                  tileMap[avatars[client.id].x][avatars[client.id].y].length >= 3 &&
+                  tileMap[avatars[client.id].x][avatars[client.id].y][1] === null &&
+                  tileMap[avatars[client.id].x][avatars[client.id].y][2] === null)) reset = true;
 
-            if (reset) {
-                avatars[client.id].x = lastX;
-                avatars[client.id].y = lastY;
-                avatar.x = lastX;
-                avatar.y = lastY;
-            }
+              for (let id of Object.keys(avatars)) {
+                  if (id === String(client.id)) continue;
+                  if (avatars[id].x === avatars[client.id].x && avatars[id].y === avatars[client.id].y) reset = true;
+              }
 
-            if (data.hasOwnProperty("t")) {
-                avatars[client.id].t = data.t;
-                avatar.t = data.t;
-            }
+              if (reset) {
+                  avatars[client.id].x = lastX;
+                  avatars[client.id].y = lastY;
+                  avatar.x = lastX;
+                  avatar.y = lastY;
+              }
 
-            if (data.hasOwnProperty("chat")) {
-                avatars[client.id].chat = data.chat;
-                avatar.chat = data.chat;
-            }
-            if (data.hasOwnProperty("chattime")) {
-                avatars[client.id].chattime = data.chattime;
-                avatar.chattime = data.chattime;
-            }
+              if (data.hasOwnProperty("t")) {
+                  avatars[client.id].t = data.t;
+                  avatar.t = data.t;
+              }
 
-            if (data.hasOwnProperty("image")) {
-                avatars[client.id].image = data.image;
-                avatar.image = data.image;
-            }
+              if (data.hasOwnProperty("chat")) {
+                  avatars[client.id].chat = data.chat;
+                  avatar.chat = data.chat;
+              }
+              if (data.hasOwnProperty("chattime")) {
+                  avatars[client.id].chattime = data.chattime;
+                  avatar.chattime = data.chattime;
+              }
 
-            if (data.hasOwnProperty("name")) {
+              if (data.hasOwnProperty("image")) {
+                  avatars[client.id].image = data.image;
+                  avatar.image = data.image;
+              }
 
-                let count = 0;
-                for (let id of Object.keys(avatars)) {
-                    if (id !== client.id && avatars[id].originalName === data.name) count++;
-                }
+              if (data.hasOwnProperty("name")) {
 
-                avatars[client.id].originalName = data.name;
-                if (count > 0) data.name += " (" + (count + 1) + ")";
-                avatars[client.id].name = data.name;
-                avatar.name = data.name;
+                  let count = 0;
+                  for (let id of Object.keys(avatars)) {
+                      if (id !== client.id && avatars[id].originalName === data.name) count++;
+                  }
 
-            }
+                  avatars[client.id].originalName = data.name;
+                  if (count > 0) data.name += " (" + (count + 1) + ")";
+                  avatars[client.id].name = data.name;
+                  avatar.name = data.name;
 
-            sendUpdate(avatar, wsServer.clients);
+              }
+
+              sendUpdate(avatar, wsServer.clients);
+
+          }
+
+        } catch(err) {
+
+          console.log("ERROR: " + err);
 
         }
 
