@@ -43,7 +43,7 @@ function receiveMessage(event) {
 
         if (data.hasOwnProperty("x")) avatars[data.id].targetX = data.x;
         if (data.hasOwnProperty("y")) avatars[data.id].targetY = data.y;
-        if (data.hasOwnProperty("t")) avatars[data.id].targetT = data.t;        
+        if (data.hasOwnProperty("t")) avatars[data.id].targetT = data.t;
 
         if (data.hasOwnProperty("chat")) avatars[data.id].chat = data.chat;
         if (data.hasOwnProperty("chattime")) avatars[data.id].chattime = data.chattime;
@@ -52,6 +52,11 @@ function receiveMessage(event) {
             if (data.id === myId) {
                 cameraX = (avatars[myId].currentX-w/128);
                 cameraY = (avatars[myId].currentY-h/96);
+                if (isNaN(cameraX) || isNaN(cameraY)) {
+                  alert("Steve caught the NaN error!");
+                  cameraX = 64-w/128;
+                  cameraY = 64-h/96;
+                }
             }
             avatars[data.id].image = document.getElementById(data.image);
         }
