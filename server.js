@@ -233,7 +233,7 @@ wsServer.on('connection', client => {
               if (data.hasOwnProperty("t")) {
                   avatars[client.id].t = data.t;
                   avatar.t = data.t;
-                  if (data.t < Date.now() + 200) {
+                  if (data.t < Date.now() + 150) {
                       reset = true;
                   }
               }
