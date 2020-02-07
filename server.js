@@ -219,9 +219,10 @@ wsServer.on('connection', client => {
                   tileMap[avatars[client.id].x][avatars[client.id].y][1] === null &&
                   tileMap[avatars[client.id].x][avatars[client.id].y][2] === null)) reset = true;
 
-              let d = Math.pow(lastX - avatars[client.id].x, 2) + Math.pow(lastY - avatars[client.id].y, 2);
+              let d = Math.sqrt(Math.pow(lastX - avatars[client.id].x, 2) + Math.pow(lastY - avatars[client.id].y, 2));
               if (d >= 2) {
-                reset = 2;
+                console.log("Toooooo fast!");
+                reset = true;
               }
 
               for (let id of Object.keys(avatars)) {
@@ -233,8 +234,8 @@ wsServer.on('connection', client => {
               if (data.hasOwnProperty("t")) {
                   avatars[client.id].t = data.t;
                   avatar.t = data.t;
-                  if (data.t < Date.now() + 150) {
-                      reset = true;
+                  if (data.t < Date.now() + 175) {
+                      data.t = Date.now() + 175;
                   }
               }
 
@@ -246,6 +247,11 @@ wsServer.on('connection', client => {
               }
 
               if (data.hasOwnProperty("chat")) {
+
+                  if (data.chat.length > 64) {
+                    data.chat = data.chat.subString(0, 64);
+                  }
+
                   avatars[client.id].chat = data.chat;
                   avatar.chat = data.chat;
               }
@@ -263,6 +269,10 @@ wsServer.on('connection', client => {
               }
 
               if (data.hasOwnProperty("name")) {
+
+                  if (data.name.length > 64) {
+                    data.name = data.name.subString(0, 64);
+                  }
 
                   let count = 0;
                   for (let id of Object.keys(avatars)) {
