@@ -98,10 +98,10 @@ function drawControls(context) {
     context.font = '18px Arial';
     context.fillText("Arrow keys - Move", w-10, s); s += 20;
     context.fillText("Left Click - Path Move", w-10, s); s += 20;
-    context.fillText("Right Click - Cancel Path", w-10, s); s += 20;
     context.fillText("C - Chat (Escape to cancel)", w-10, s); s += 20;
     context.fillText("Enter - Place sign (Escape to cancel)", w-10, s); s += 30;
 
+    context.fillText("Right Click - Place block (limited range)", w-10, s); s += 20;
     context.fillText("WSAD - Place blocks adjacent", w-10, s); s += 20;
     context.fillText("Space - Place floor tile", w-10, s); s += 20;
     context.fillText("1-9 - Place blocks overhead", w-10, s); s += 30;
@@ -111,12 +111,69 @@ function drawControls(context) {
     context.fillText("Q - Pick mode (Just one)", w-10, s); s += 20;
     context.fillText("E - Excavate mode", w-10, s); s += 20;
     context.fillText("R - Refill mode", w-10, s); s += 20;
-    context.fillText("Escape - Normal mode", w-10, s); s += 30;
+    context.fillText("Escape - Normal mode", w-10, s); s += 20;
+    context.fillText("Middle click or \\ (Hold) & Mouse - Mode chooser", w-10, s); s += 30;
 
     context.fillText("T (Hold) & Mouse or PageUp / PageDown - Select block tile", w-10, s); s += 20;
-    context.fillText("Shift (Hold) - X-Ray mode", w-10, s); s += 20;
+    context.fillText("Shift (Hold) - X-Ray mode", w-10, s); s += 30;
+
+    context.fillText("M (Hold) - Show mini map", w-10, s); s += 20;
+    context.fillText("K - Toggle mouse controllable camera", w-10, s); s += 30;
 
     context.textAlign = 'center';
     context.fillText(mouseX + ", " + mouseY, mousePosition.x, mousePosition.y);
+
+}
+
+function drawModeChooser(context) {
+
+
+    context.font = '44px Arial';
+    context.textAlign = 'center';
+
+    let gap = h/7;
+
+    if (mode === NORMAL_MODE) {
+        context.fillStyle = 'white';
+    } else {
+        context.fillStyle = 'blue';
+    }
+    context.fillText("Normal", w/2, gap);
+
+    if (mode === DELETE_MODE) {
+        context.fillStyle = 'white';
+    } else {
+        context.fillStyle = 'blue';
+    }
+    context.fillText("Delete", w/2, gap*2);
+
+    if (mode === PICK_MODE) {
+        context.fillStyle = 'white';
+    } else {
+        context.fillStyle = 'blue';
+    }
+    context.fillText("Pick (Once)", w/2, gap*3);
+
+    if (mode === NULL_MODE) {
+        context.fillStyle = 'white';
+    } else {
+        context.fillStyle = 'blue';
+    }
+    context.fillText("Null", w/2, gap*4);
+
+    if (mode === EXCAVATE_MODE) {
+        context.fillStyle = 'white';
+    } else {
+        context.fillStyle = 'blue';
+    }
+    context.fillText("Excavate", w/2, gap*5);
+
+    if (mode === REFILL_MODE) {
+        context.fillStyle = 'white';
+    } else {
+        context.fillStyle = 'blue';
+    }
+    context.fillText("Refill", w/2, gap*6);
+
 
 }

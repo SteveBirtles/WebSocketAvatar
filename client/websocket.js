@@ -30,10 +30,7 @@ function receiveMessage(event) {
         myId = data.you;
         console.log("Connected and given id of " + myId);
 
-        let newAvatar = {x: Math.floor(Math.random() * MAP_SIZE) + 1,
-                         y: Math.floor(Math.random() * MAP_SIZE) + 1,
-                         t: 0,
-                         image: selectedAvatar.id,
+        let newAvatar = {image: selectedAvatar.id,
                          name: document.getElementById("avatarName").value};
 
         connection.send(JSON.stringify(newAvatar));
@@ -51,8 +48,13 @@ function receiveMessage(event) {
         if (data.hasOwnProperty("chat")) avatars[data.id].chat = data.chat;
         if (data.hasOwnProperty("chattime")) avatars[data.id].chattime = data.chattime;
 
-        if (data.hasOwnProperty("image") && avatars[data.id].image === undefined)
-                          avatars[data.id].image = document.getElementById(data.image);
+        if (data.hasOwnProperty("image") && avatars[data.id].image === undefined) {
+            if (data.id === myId) {
+                cameraX = (avatars[myId].currentX-w/128);
+                cameraY = (avatars[myId].currentY-h/96);
+            }
+            avatars[data.id].image = document.getElementById(data.image);
+        }
 
         if (data.hasOwnProperty("name")) avatars[data.id].name = data.name;
 

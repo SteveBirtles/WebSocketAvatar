@@ -104,18 +104,36 @@ wsServer.on('connection', client => {
     console.log(`Client ${client.id} connected!`);
 
     for (let id of Object.keys(avatars)) {
-        sendAvatar(id, [client]);
+        let avatar = {id,
+            x: avatars[id].x,
+            y: avatars[id].y,
+            t: 0,
+            name: avatars[id].name,
+            image: avatars[id].image
+        };
+        sendUpdate(avatar, [client]);
     }
+
     for (let x = 0; x <= MAP_SIZE; x++) {
       for (let y = 0; y <= MAP_SIZE; y++) {
           sendTileStack(x, y, tileMap[x][y], [client]);
       }
     }
 
-    avatars[client.id] = {id: client.id, x: Math.floor(MAP_SIZE/2), y: Math.floor(MAP_SIZE/2), t: 0, chat: "", chattime: 0};
-
     let newClientData = {you: client.id, serverTime: Date.now() - serverStartTime};
     client.send(JSON.stringify(newClientData));
+
+    for (let tries = 0; tries < 100; tries++) {
+        let x = Math.floor(MAP_SIZE/2 + Math.random() * 8 - 4);
+        let y = Math.floor(MAP_SIZE/2 + Math.random() * 8 - 4);
+        if (tileMap[x][y].length === 1 || tries == 99) {
+            if (tries === 99) console.log("100 tries to place new user!");
+            avatars[client.id] = {id: client.id, x, y, t: 0, chat: "", chattime: 0};
+            break;
+        }
+    }
+
+    sendUpdate(avatars[client.id], wsServer.clients);
 
     client.on('message', message => {
 
@@ -177,8 +195,17 @@ wsServer.on('connection', client => {
             let lastY = avatars[client.id].y;
             let reset = false;
 
-            if (data.hasOwnProperty("x")) avatars[client.id].x = data.x;
-            if (data.hasOwnProperty("y")) avatars[client.id].y = data.y;
+            let avatar = {id: client.id};
+
+            if (data.hasOwnProperty("x")) {
+                avatar.x = data.x;
+                avatars[client.id].x = data.x;
+            }
+
+            if (data.hasOwnProperty("y")) {
+                avatar.y = data.y;
+                avatars[client.id].y = data.y;
+            }
 
             if (avatars[client.id].x < 1 ||
                 avatars[client.id].x > MAP_SIZE-1 ||
@@ -198,14 +225,28 @@ wsServer.on('connection', client => {
             if (reset) {
                 avatars[client.id].x = lastX;
                 avatars[client.id].y = lastY;
+                avatar.x = lastX;
+                avatar.y = lastY;
             }
 
-            if (data.hasOwnProperty("t")) avatars[client.id].t = data.t;
+            if (data.hasOwnProperty("t")) {
+                avatars[client.id].t = data.t;
+                avatar.t = data.t;
+            }
 
-            if (data.hasOwnProperty("chat")) avatars[client.id].chat = data.chat;
-            if (data.hasOwnProperty("chattime")) avatars[client.id].chattime = data.chattime;
+            if (data.hasOwnProperty("chat")) {
+                avatars[client.id].chat = data.chat;
+                avatar.chat = data.chat;
+            }
+            if (data.hasOwnProperty("chattime")) {
+                avatars[client.id].chattime = data.chattime;
+                avatar.chattime = data.chattime;
+            }
 
-            if (data.hasOwnProperty("image")) avatars[client.id].image = data.image;
+            if (data.hasOwnProperty("image")) {
+                avatars[client.id].image = data.image;
+                avatar.image = data.image;
+            }
 
             if (data.hasOwnProperty("name")) {
 
@@ -217,10 +258,11 @@ wsServer.on('connection', client => {
                 avatars[client.id].originalName = data.name;
                 if (count > 0) data.name += " (" + (count + 1) + ")";
                 avatars[client.id].name = data.name;
+                avatar.name = data.name;
 
             }
 
-            sendAvatar(client.id, wsServer.clients);
+            sendUpdate(avatar, wsServer.clients);
 
         }
 
@@ -240,8 +282,8 @@ wsServer.on('connection', client => {
 
 });
 
-function sendAvatar(id, clients) {
-    let broadcast = JSON.stringify(avatars[id]);
+function sendUpdate(avatar, clients) {
+    let broadcast = JSON.stringify(avatar);
     for (let c of clients) {
         c.send(broadcast);
     }

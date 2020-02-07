@@ -1,13 +1,13 @@
 let showControls = true;
 let showTiles = false, tileMapSize;
-let mousePosition = {x: 0, y: 0}, leftMouseDown = false, rightMouseDown = false;
+let mousePosition = {x: 0, y: 0}, leftMouseDown = false, rightMouseDown = false, middleMouseDown = false;
 let pressedKeys = {};
 let selectedTile = 86;
 let blockPlace = false;
 let mouseX, mouseY;
 let pathTargetX = null, pathTargetY = null;
-let chatting = false;
-let xRay = false, miniMap = false;
+let chatting = false, modeChooser = false;
+let xRay = false, miniMap = false, cameraMouse = false;
 let pendingTileChanges = [];
 
 const NORMAL_MODE = 0;
@@ -22,22 +22,28 @@ function processInputs() {
 
     //console.log("*** Procesing inputs ***");
 
+    let interact = null;
+
     mouseX = Math.floor((mousePosition.x + cameraX*64 + 32) / 64);
     mouseY = Math.floor((mousePosition.y + cameraY*48 + 24) / 48);
 
-    if (!(chatting || showTiles || miniMap)) {
+    if (!(chatting || showTiles || miniMap || modeChooser)) {
 
-        if (mousePosition.x < 64) { cameraX -= 0.33333; }
-        if (mousePosition.x > w-64) { cameraX += 0.3333; }
-        if (mousePosition.y < 64) { cameraY -= 0.3333; }
-        if (mousePosition.y > h-64) { cameraY += 0.3333; }
+        if (cameraMouse) {
+            if (mousePosition.x < 64) { cameraX -= 0.33333; }
+            if (mousePosition.x > w-64) { cameraX += 0.3333; }
+            if (mousePosition.y < 64) { cameraY -= 0.3333; }
+            if (mousePosition.y > h-64) { cameraY += 0.3333; }
+        }
 
         if (leftMouseDown) {
             pathTargetX = mouseX;
             pathTargetY = mouseY;
-        } else if (rightMouseDown) {
-            pathTargetX = null;
-            pathTargetY = null;
+        } else if (rightMouseDown && mouseX >= 0 && mouseY >= 0 && mouseX < MAP_SIZE && mouseY < MAP_SIZE) {
+            let d = Math.pow(mouseX - avatars[myId].currentX, 2) + Math.pow(mouseY - avatars[myId].currentY, 2)
+            if ((d === 0 && tileMap[mouseX][mouseY].length === 0) || (d > 0 && d <= 5 && mouseX >= 0 && mouseY >= 0 && mouseX < MAP_SIZE && mouseY < MAP_SIZE)) {
+                interact = {x: mouseX, y: mouseY};
+            }
         }
 
     }
@@ -70,7 +76,16 @@ function processInputs() {
                 showTiles = false;
               }
 
-            }
+          } else if (modeChooser) {
+
+              let gap = h/7;
+
+              mode = Math.floor(mousePosition.y/gap - 0.5);
+
+              if (mode < 0) mode = 0;
+              if (mode > 5) mode = 5;
+
+          }
 
             if (chatting && pressedKeys["Escape"]) {
                 document.getElementById("chat").style.display = "none";
@@ -81,15 +96,21 @@ function processInputs() {
 
                 xRay = pressedKeys["Shift"];
                 miniMap = pressedKeys["m"];
+                modeChooser = pressedKeys["\\"] || middleMouseDown;
 
                 if (!miniMap) {
 
                     let x = Math.floor(avatars[myId].currentX);
                     let y = Math.floor(avatars[myId].currentY);
 
-                    if (pressedKeys["h"]) {
+                    if (pressedKeys["h"] || pressedKeys["H"]) {
                       if (!blockPlace) {
                         showControls = !showControls;
+                      }
+                      blockPlace = true;
+                  } else if (pressedKeys["k"] || pressedKeys["K"]) {
+                      if (!blockPlace) {
+                        cameraMouse = !cameraMouse;
                       }
                       blockPlace = true;
                     } else if (pressedKeys["Escape"]) {
@@ -254,8 +275,30 @@ function processInputs() {
                           } else if (mode === NORMAL_MODE) {
                               pendingTileChanges.push({x: x, y: y, tile: selectedTile, z})
                           }
-                        }
+                      }
                         blockPlace = true;
+                    } else if (interact !== null) {
+                        if (!blockPlace) {
+                            let x = interact.x;
+                            let y = interact.y;
+
+                            if (mode === NULL_MODE) {
+                                pendingTileChanges.push({x: x, y: y, tile: -2});
+                            } else if (mode === DELETE_MODE) {
+                                pendingTileChanges.push({x: x, y: y, tile: -1});
+                            } else if (mode === PICK_MODE) {
+                                if (tileMap[x][y].length > 0) {
+                                    if (tileMap[x][y][tileMap[x][y].length - 1] !== null) {
+                                        selectedTile = tileMap[x][y][tileMap[x][y].length - 1];
+                                    }
+                                    mode = NORMAL_MODE;
+                                }
+                            } else if (mode === NORMAL_MODE) {
+                                pendingTileChanges.push({x: x, y: y, tile: selectedTile})
+                            }
+                        interact = null;
+                        blockPlace = true;
+                      }
                     } else if (pressedKeys["PageUp"]) {
                         if (!blockPlace) {
                           selectedTile -= 1;
@@ -364,5 +407,4 @@ function processInputs() {
         }
 
     }
-
 }

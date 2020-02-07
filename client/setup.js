@@ -124,16 +124,20 @@ function joinGame() {
     canvas.addEventListener('mousedown', event => {
         if (event.button === 0) {
             leftMouseDown = true;
-        } else {
+        } else if (event.button === 2) {
             rightMouseDown = true;
+        } else if (event.button === 1) {
+            middleMouseDown = true;
         }
     }, false);
 
     canvas.addEventListener('mouseup', event => {
         if (event.button === 0) {
             leftMouseDown = false;
-        } else {
+        } else if (event.button === 2) {
             rightMouseDown = false;
+        } else if (event.button === 1) {
+            middleMouseDown = false;
         }
     }, false);
 

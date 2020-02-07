@@ -6,7 +6,14 @@ let tileMap = [];
 
 function renderWorld(context) {
 
-    if (miniMap) {
+    if (avatars[myId] === undefined || avatars[myId].image === undefined) {
+
+        context.fillStyle = 'white';
+        context.font = '36px Arial';
+        context.textAlign = 'center';
+        context.fillText("Loading world...", w/2, h/2);
+
+    } else if (miniMap) {
 
         renderMiniMap(context);
 
@@ -139,7 +146,7 @@ function renderGroundStrip(context, y) {
                 context.fillRect(avatars[myId].currentX*64-32 - cameraX*64, avatars[myId].currentY*48-24 - cameraY*48, 64, 48);
               }
 
-          } else if (mouseY === y && showControls) {
+          } else if (mouseY === y && showControls && !modeChooser) {
 
             context.globalAlpha = 0.25;
             context.fillStyle = "white";

@@ -56,10 +56,17 @@ function updateAvatars() {
     }
 
     if (avatars[myId] !== undefined) {
-        if (cameraX < (avatars[myId].currentX-w/128) - (w/64)/2.5) cameraX = (avatars[myId].currentX-w/128) - (w/64)/2.5;
-        if (cameraY < (avatars[myId].currentY-h/96)  - (h/48)/3) cameraY = (avatars[myId].currentY-h/96)  - (h/48)/3;
-        if (cameraX > (avatars[myId].currentX-w/128) + (w/64)/2.5) cameraX = (avatars[myId].currentX-w/128) + (w/64)/2.5;
-        if (cameraY > (avatars[myId].currentY-h/96)  + (h/48)/3) cameraY = (avatars[myId].currentY-h/96)  + (h/48)/3;
+        if (cameraMouse) {
+            if (cameraX < (avatars[myId].currentX-w/128) - (w/64)/2.5) cameraX = (avatars[myId].currentX-w/128) - (w/64)/2.5;
+            if (cameraY < (avatars[myId].currentY-h/96)  - (h/48)/3) cameraY = (avatars[myId].currentY-h/96)  - (h/48)/3;
+            if (cameraX > (avatars[myId].currentX-w/128) + (w/64)/2.5) cameraX = (avatars[myId].currentX-w/128) + (w/64)/2.5;
+            if (cameraY > (avatars[myId].currentY-h/96)  + (h/48)/3) cameraY = (avatars[myId].currentY-h/96)  + (h/48)/3;
+        } else {
+            if (cameraX < (avatars[myId].currentX-w/128) - (w/64)/4) cameraX = (avatars[myId].currentX-w/128) - (w/64)/4;
+            if (cameraY < (avatars[myId].currentY-h/96)  - (h/48)/4) cameraY = (avatars[myId].currentY-h/96)  - (h/48)/4;
+            if (cameraX > (avatars[myId].currentX-w/128) + (w/64)/4) cameraX = (avatars[myId].currentX-w/128) + (w/64)/4;
+            if (cameraY > (avatars[myId].currentY-h/96)  + (h/48)/4) cameraY = (avatars[myId].currentY-h/96)  + (h/48)/4;
+        }
     }
 
     if (cameraX < 0) cameraX = 0;
