@@ -120,7 +120,7 @@ wsServer.on('connection', client => {
       }
     }
 
-    let newClientData = {you: client.id, serverTime: Date.now() - serverStartTime};
+    let newClientData = {you: client.id, serverTime: Date.now() - serverStartTime, x: 64, y: 64};
     client.send(JSON.stringify(newClientData));
 
     for (let tries = 0; tries < 100; tries++) {
