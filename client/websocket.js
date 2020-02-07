@@ -43,7 +43,7 @@ function receiveMessage(event) {
 
         if (data.hasOwnProperty("x")) avatars[data.id].targetX = data.x;
         if (data.hasOwnProperty("y")) avatars[data.id].targetY = data.y;
-        if (data.hasOwnProperty("t")) avatars[data.id].targetT = data.t;
+        if (data.hasOwnProperty("t")) avatars[data.id].targetT = data.t;        
 
         if (data.hasOwnProperty("chat")) avatars[data.id].chat = data.chat;
         if (data.hasOwnProperty("chattime")) avatars[data.id].chattime = data.chattime;

@@ -22,6 +22,11 @@ function updateAvatars() {
     for (let id of Object.keys(avatars)) {
         let avatar = avatars[id];
 
+        if (isNaN(avatar.currentX) || isNaN(avatar.currentY) || avatar.currentX === undefined || avatar.currentY === undefined) {
+            avatar.currentX = avatar.targetX;
+            avatar.currentY = avatar.targetY;
+        }
+
         if (worldTime >= avatar.targetT &&
             (avatar.currentX != avatar.targetX ||
               avatar.currentY != avatar.targetY)) {
