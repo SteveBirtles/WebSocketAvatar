@@ -4,75 +4,75 @@ const chatLifespan = 5000;
 const MAX_PATH_LENGTH = 1000;
 
 let myId;
-let avatars = {};
+let entities = {};
 let shadow = new Image();
-let avatarMap;
+let entityMap;
 
-function updateAvatars() {
+function updateEntities() {
 
-    //console.log("*** Updating avatars... ***");
+    //console.log("*** Updating entities... ***");
 
-    avatarMap = [];
+    entityMap = [];
     for (let x = 0; x <= MAP_SIZE; x++) {
       let row = [];
       for (let y = 0; y <= MAP_SIZE; y++) {
         row.push([]);
       }
-      avatarMap.push(row);
+      entityMap.push(row);
     }
 
-    for (let id of Object.keys(avatars)) {
-        let avatar = avatars[id];
+    for (let id of Object.keys(entities)) {
+        let entity = entities[id];
 
-        if (isNaN(avatar.currentX) || isNaN(avatar.currentY) || avatar.currentX === undefined || avatar.currentY === undefined) {
-            avatar.currentX = avatar.targetX;
-            avatar.currentY = avatar.targetY;
+        if (isNaN(entity.currentX) || isNaN(entity.currentY) || entity.currentX === undefined || entity.currentY === undefined) {
+            entity.currentX = entity.targetX;
+            entity.currentY = entity.targetY;
         }
 
-        if (worldTime >= avatar.targetT &&
-            (avatar.currentX != avatar.targetX ||
-              avatar.currentY != avatar.targetY)) {
+        if (worldTime >= entity.targetT &&
+            (entity.currentX != entity.targetX ||
+              entity.currentY != entity.targetY)) {
 
-            avatar.currentX = avatar.targetX;
-            avatar.currentY = avatar.targetY;
+            entity.currentX = entity.targetX;
+            entity.currentY = entity.targetY;
 
         } else if (lastClientTime !== undefined) {
 
-            let dx = (avatar.targetX - avatar.currentX) / (avatar.targetT - worldTime);
-            let dy = (avatar.targetY - avatar.currentY) / (avatar.targetT - worldTime);
+            let dx = (entity.targetX - entity.currentX) / (entity.targetT - worldTime);
+            let dy = (entity.targetY - entity.currentY) / (entity.targetT - worldTime);
             let dt = clientTime - lastClientTime;
 
-            if (!isNaN(dx)) avatar.currentX += dx * dt;
-            if (!isNaN(dy)) avatar.currentY += dy * dt;
+            if (!isNaN(dx)) entity.currentX += dx * dt;
+            if (!isNaN(dy)) entity.currentY += dy * dt;
 
         }
 
 
-        if (avatar.image !== undefined && avatar.image !== null && avatar.image !== "") {
+        if (entity.image !== undefined && entity.image !== null && entity.image !== "") {
 
-          let x = Math.floor(avatar.currentX);
-          let y = Math.floor(avatar.currentY);
-          let dy = avatar.currentY - Math.floor(avatar.currentY);
+          let x = Math.floor(entity.currentX);
+          let y = Math.floor(entity.currentY);
+          let dy = entity.currentY - Math.floor(entity.currentY);
           if (dy > 0) y++;
           if (x >= 0 && x <= MAP_SIZE && y >= 0 && y <= MAP_SIZE) {
-            avatarMap[x][y].push(avatar);
+            entityMap[x][y].push(entity);
           }
 
         }
 
     }
 
-    if (avatars[myId] !== undefined) {
+    if (entities[myId] !== undefined) {
         if (cameraMouse) {
-            if (cameraX < (avatars[myId].currentX-w/128) - (w/64)/2.5) cameraX = (avatars[myId].currentX-w/128) - (w/64)/2.5;
-            if (cameraY < (avatars[myId].currentY-h/96)  - (h/48)/3) cameraY = (avatars[myId].currentY-h/96)  - (h/48)/3;
-            if (cameraX > (avatars[myId].currentX-w/128) + (w/64)/2.5) cameraX = (avatars[myId].currentX-w/128) + (w/64)/2.5;
-            if (cameraY > (avatars[myId].currentY-h/96)  + (h/48)/3) cameraY = (avatars[myId].currentY-h/96)  + (h/48)/3;
+            if (cameraX < (entities[myId].currentX-w/128) - (w/64)/2.5) cameraX = (entities[myId].currentX-w/128) - (w/64)/2.5;
+            if (cameraY < (entities[myId].currentY-h/96)  - (h/48)/3) cameraY = (entities[myId].currentY-h/96)  - (h/48)/3;
+            if (cameraX > (entities[myId].currentX-w/128) + (w/64)/2.5) cameraX = (entities[myId].currentX-w/128) + (w/64)/2.5;
+            if (cameraY > (entities[myId].currentY-h/96)  + (h/48)/3) cameraY = (entities[myId].currentY-h/96)  + (h/48)/3;
         } else {
-            if (cameraX < (avatars[myId].currentX-w/128) - (w/64)/4) cameraX = (avatars[myId].currentX-w/128) - (w/64)/4;
-            if (cameraY < (avatars[myId].currentY-h/96)  - (h/48)/4) cameraY = (avatars[myId].currentY-h/96)  - (h/48)/4;
-            if (cameraX > (avatars[myId].currentX-w/128) + (w/64)/4) cameraX = (avatars[myId].currentX-w/128) + (w/64)/4;
-            if (cameraY > (avatars[myId].currentY-h/96)  + (h/48)/4) cameraY = (avatars[myId].currentY-h/96)  + (h/48)/4;
+            if (cameraX < (entities[myId].currentX-w/128) - (w/64)/4) cameraX = (entities[myId].currentX-w/128) - (w/64)/4;
+            if (cameraY < (entities[myId].currentY-h/96)  - (h/48)/4) cameraY = (entities[myId].currentY-h/96)  - (h/48)/4;
+            if (cameraX > (entities[myId].currentX-w/128) + (w/64)/4) cameraX = (entities[myId].currentX-w/128) + (w/64)/4;
+            if (cameraY > (entities[myId].currentY-h/96)  + (h/48)/4) cameraY = (entities[myId].currentY-h/96)  + (h/48)/4;
         }
     }
 
@@ -89,15 +89,15 @@ function calculatePath(endX, endY) {
 
     if (endX < 1 || endY < 1 || endX > MAP_SIZE-1 || endY > MAP_SIZE-1) return [];
     if (tileMap[endX][endY].length > 1) return [];
-    for (let id of Object.keys(avatars)) {
-        if (endX === avatars[id].targetX && endY === avatars[id].targetY) return [];
+    for (let id of Object.keys(entities)) {
+        if (endX === entities[id].targetX && endY === entities[id].targetY) return [];
     }
 
     let adjacencies = [{x: 0, y:-1, g:10}, {x:  1, y:-1, g:14}, {x: 1, y:0, g:10}, {x: 1, y: 1, g:14},
                        {x: 0, y: 1, g:10}, {x: -1, y: 1, g:14}, {x:-1, y:0, g:10}, {x:-1, y:-1, g:14}];
 
-    let startX = avatars[myId].targetX;
-    let startY = avatars[myId].targetY;
+    let startX = entities[myId].targetX;
+    let startY = entities[myId].targetY;
 
     let dx = Math.abs(startX - endX);
     let dy = Math.abs(startY - endY);
@@ -131,8 +131,8 @@ function calculatePath(endX, endY) {
                 if (tileMap[x][current.y].length > 1) continue;
             }
 
-            for (let id of Object.keys(avatars)) {
-                if (x === avatars[id].targetX && y === avatars[id].targetY) continue;
+            for (let id of Object.keys(entities)) {
+                if (x === entities[id].targetX && y === entities[id].targetY) continue;
             }
 
             for (let node of nodes) {

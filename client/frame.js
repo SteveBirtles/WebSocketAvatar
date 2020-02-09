@@ -29,7 +29,7 @@ function gameFrame(frameTime) {
 
     processInputs();
 
-    updateAvatars();
+    updateEntities();
 
     let canvas = document.getElementById("avatarCanvas");
     let context = canvas.getContext("2d");

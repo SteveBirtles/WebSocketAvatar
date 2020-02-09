@@ -6,7 +6,7 @@ let tileMap = [];
 
 function renderWorld(context) {
 
-    if (avatars[myId] === undefined || avatars[myId].image === undefined) {
+    if (entities[myId] === undefined || entities[myId].image === undefined) {
 
         context.fillStyle = 'white';
         context.font = '36px Arial';
@@ -23,7 +23,7 @@ function renderWorld(context) {
 
             renderGroundStrip(context, y);
 
-            renderAvatarStrip(context, y);
+            renderentitiestrip(context, y);
 
             renderFrontStrip(context, y);
 
@@ -53,17 +53,17 @@ function renderMiniMap(context) {
         }
     }
 
-    for (let id of Object.keys(avatars)) {
-        let avatar = avatars[id];
+    for (let id of Object.keys(entities)) {
+        let entity = entities[id];
 
         context.fillStyle = 'white';
         context.beginPath();
-        context.arc(x0 + (avatar.currentX + 0.5)*miniMapTileSize, y0 + (avatar.currentY + 0.5)*miniMapTileSize, miniMapTileSize/2, 0, 2*Math.PI);
+        context.arc(x0 + (entity.currentX + 0.5)*miniMapTileSize, y0 + (entity.currentY + 0.5)*miniMapTileSize, miniMapTileSize/2, 0, 2*Math.PI);
         context.fill();
 
         context.font = '12px Arial';
         context.textAlign = 'center';
-        context.fillText(avatar.name, x0 + avatar.currentX*miniMapTileSize, y0 + (avatar.currentY - 1)*miniMapTileSize);
+        context.fillText(entity.name, x0 + entity.currentX*miniMapTileSize, y0 + (entity.currentY - 1)*miniMapTileSize);
 
     }
 
@@ -77,7 +77,7 @@ function renderGroundStrip(context, y) {
 
         if (offScreen) continue;
 
-        let hideForeground = xRay && !(chatting || showTiles) && avatars[myId] !== undefined && y > Math.floor(avatars[myId].currentY);
+        let hideForeground = xRay && !(chatting || showTiles) && entities[myId] !== undefined && y > Math.floor(entities[myId].currentY);
         if (hideForeground && z > 0) continue;
 
         for (let x =  Math.floor(cameraX); x <=  Math.floor(cameraX) + w/64 + 2; x++) {
@@ -140,10 +140,10 @@ function renderGroundStrip(context, y) {
 
             if (xRay) {
 
-                if (avatars[myId] !== undefined && Math.floor(avatars[myId].currentY) === y) {
+                if (entities[myId] !== undefined && Math.floor(entities[myId].currentY) === y) {
                     context.globalAlpha = 0.5;
                     context.fillStyle = "red";
-                    context.fillRect(avatars[myId].currentX*64-32 - cameraX*64, avatars[myId].currentY*48-24 - cameraY*48, 64, 48);
+                    context.fillRect(entities[myId].currentX*64-32 - cameraX*64, entities[myId].currentY*48-24 - cameraY*48, 64, 48);
                 }
 
             } else if (showControls && !modeChooser) {
@@ -172,40 +172,40 @@ function renderGroundStrip(context, y) {
 
 }
 
-function renderAvatarStrip(context, y) {
+function renderentitiestrip(context, y) {
 
     if (!(xRay && (chatting || showTiles)) && y < Math.floor(cameraY) + h/48 + 1) {
 
         for (let x = Math.floor(cameraX); x <=  Math.floor(cameraX) + w/64 + 2; x++) {
             for (let z = 0; z < 16; z++) {
 
-                if (avatarMap[Math.floor(x)] !== undefined && avatarMap[Math.floor(x)][Math.floor(y)] !== undefined) {
+                if (entityMap[Math.floor(x)] !== undefined && entityMap[Math.floor(x)][Math.floor(y)] !== undefined) {
 
-                    for (let avatar of avatarMap[Math.floor(x)][Math.floor(y)]) {
+                    for (let entity of entityMap[Math.floor(x)][Math.floor(y)]) {
 
-                        if (avatar.currentY*48-128 - cameraY*48 > h) continue;
+                        if (entity.currentY*48-128 - cameraY*48 > h) continue;
 
                         context.globalAlpha = 0.25;
-                        context.drawImage(shadow, 0,0,256,256,avatar.currentX*64 - cameraX*64 - 32, avatar.currentY*48 - cameraY*48 - 24, 64, 48);
+                        context.drawImage(shadow, 0,0,256,256,entity.currentX*64 - cameraX*64 - 32, entity.currentY*48 - cameraY*48 - 24, 64, 48);
                         context.globalAlpha = 1;
 
-                        context.drawImage(avatar.image, avatar.currentX*64-32 - cameraX*64, avatar.currentY*48-128 - cameraY*48);
+                        context.drawImage(entity.image, entity.currentX*64-32 - cameraX*64, entity.currentY*48-128 - cameraY*48);
 
-                        if (avatar.chattime !== undefined && avatar.chattime > worldTime) {
+                        if (entity.chattime !== undefined && entity.chattime > worldTime) {
 
                             context.fillStyle = 'white';
                             context.font = 'bold 24px Arial';
                             context.textAlign = 'center';
-                            context.fillText(avatar.name + ": " + avatar.chat,
-                            avatar.currentX*64 - cameraX*64, avatar.currentY*48-128 - cameraY*48);
+                            context.fillText(entity.name + ": " + entity.chat,
+                            entity.currentX*64 - cameraX*64, entity.currentY*48-128 - cameraY*48);
 
-                        } else if (avatar.name !== undefined ) {
+                        } else if (entity.name !== undefined ) {
 
                             context.fillStyle = 'grey';
                             context.font = '24px Arial';
                             context.textAlign = 'center';
-                            context.fillText(avatar.name,
-                                avatar.currentX*64 - cameraX*64, avatar.currentY*48-128 - cameraY*48);
+                            context.fillText(entity.name,
+                                entity.currentX*64 - cameraX*64, entity.currentY*48-128 - cameraY*48);
 
                         }
                     }
@@ -226,7 +226,7 @@ function renderFrontStrip(context, y) {
 
             if (offScreen) continue;
 
-            let hideForeground = xRay && !(chatting || showTiles) && avatars[myId] !== undefined && y > Math.floor(avatars[myId].currentY);
+            let hideForeground = xRay && !(chatting || showTiles) && entities[myId] !== undefined && y > Math.floor(entities[myId].currentY);
             if (hideForeground && z > 0) continue;
 
             if (tileMap[Math.floor(x)] !== undefined && tileMap[Math.floor(x)][Math.floor(y)] !== undefined &&

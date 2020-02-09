@@ -41,7 +41,7 @@ function processInputs() {
             myPath = calculatePath(mouseX, mouseY);
 
         } else if (rightMouseDown && mouseX >= 0 && mouseY >= 0 && mouseX < MAP_SIZE && mouseY < MAP_SIZE) {
-            let d = Math.pow(mouseX - avatars[myId].currentX, 2) + Math.pow(mouseY - avatars[myId].currentY, 2)
+            let d = Math.pow(mouseX - entities[myId].currentX, 2) + Math.pow(mouseY - entities[myId].currentY, 2)
             if ((d === 0 && tileMap[mouseX][mouseY].length === 0) || (d > 0 && d <= 5 && mouseX >= 0 && mouseY >= 0 && mouseX < MAP_SIZE && mouseY < MAP_SIZE)) {
                 interact = {x: mouseX, y: mouseY};
             }
@@ -49,10 +49,10 @@ function processInputs() {
 
     }
 
-    if (myId !== undefined && avatars[myId] !== undefined) {
+    if (myId !== undefined && entities[myId] !== undefined) {
 
-        if (avatars[myId].currentX === avatars[myId].targetX &&
-              avatars[myId].currentY === avatars[myId].targetY) {
+        if (entities[myId].currentX === entities[myId].targetX &&
+              entities[myId].currentY === entities[myId].targetY) {
 
             let moved = false;
 
@@ -101,8 +101,8 @@ function processInputs() {
 
                 if (!miniMap) {
 
-                    let x = Math.floor(avatars[myId].currentX);
-                    let y = Math.floor(avatars[myId].currentY);
+                    let x = Math.floor(entities[myId].currentX);
+                    let y = Math.floor(entities[myId].currentY);
 
                     if (pressedKeys["h"] || pressedKeys["H"]) {
                       if (!blockPlace) {
@@ -320,60 +320,60 @@ function processInputs() {
                         myPath = [];
                     } else if (myPath.length > 0) {
                         let next = myPath.shift();
-                        avatars[myId].targetX = next.x;
-                        avatars[myId].targetY = next.y;
+                        entities[myId].targetX = next.x;
+                        entities[myId].targetY = next.y;
                         moved = true;
                     }
 
-                    if (pressedKeys["ArrowUp"] && !(pressedKeys["w"] || pressedKeys["W"]) && avatars[myId].targetY > 1) {
-                        let clearPath = tileMap[avatars[myId].targetX][avatars[myId].targetY-1].length <= 1 ||
-                            (tileMap[avatars[myId].targetX][avatars[myId].targetY-1].length >= 3 &&
-                                tileMap[avatars[myId].targetX][avatars[myId].targetY-1][1] === null &&
-                                tileMap[avatars[myId].targetX][avatars[myId].targetY-1][2] === null);
+                    if (pressedKeys["ArrowUp"] && !(pressedKeys["w"] || pressedKeys["W"]) && entities[myId].targetY > 1) {
+                        let clearPath = tileMap[entities[myId].targetX][entities[myId].targetY-1].length <= 1 ||
+                            (tileMap[entities[myId].targetX][entities[myId].targetY-1].length >= 3 &&
+                                tileMap[entities[myId].targetX][entities[myId].targetY-1][1] === null &&
+                                tileMap[entities[myId].targetX][entities[myId].targetY-1][2] === null);
                         if (clearPath) {
-                            avatars[myId].targetY -= 1;
+                            entities[myId].targetY -= 1;
                             moved = true;
                         }
                     }
-                    if (pressedKeys["ArrowDown"] && !(pressedKeys["s"] || pressedKeys["S"]) && avatars[myId].targetY < MAP_SIZE-1) {
-                        let clearPath = tileMap[avatars[myId].targetX][avatars[myId].targetY+1].length <= 1 ||
-                            (tileMap[avatars[myId].targetX][avatars[myId].targetY+1].length >= 3 &&
-                                tileMap[avatars[myId].targetX][avatars[myId].targetY+1][1] === null &&
-                                tileMap[avatars[myId].targetX][avatars[myId].targetY+1][2] === null);
+                    if (pressedKeys["ArrowDown"] && !(pressedKeys["s"] || pressedKeys["S"]) && entities[myId].targetY < MAP_SIZE-1) {
+                        let clearPath = tileMap[entities[myId].targetX][entities[myId].targetY+1].length <= 1 ||
+                            (tileMap[entities[myId].targetX][entities[myId].targetY+1].length >= 3 &&
+                                tileMap[entities[myId].targetX][entities[myId].targetY+1][1] === null &&
+                                tileMap[entities[myId].targetX][entities[myId].targetY+1][2] === null);
                         if (clearPath) {
-                            avatars[myId].targetY += 1;
+                            entities[myId].targetY += 1;
                             moved = true;
                         }
                     }
-                    if (pressedKeys["ArrowLeft"] && !(pressedKeys["a"] || pressedKeys["A"]) && avatars[myId].targetX > 1) {
-                        let clearPath = tileMap[avatars[myId].targetX-1][avatars[myId].targetY].length <= 1 ||
-                            (tileMap[avatars[myId].targetX-1][avatars[myId].targetY].length >= 3 &&
-                                tileMap[avatars[myId].targetX-1][avatars[myId].targetY][1] === null &&
-                                tileMap[avatars[myId].targetX-1][avatars[myId].targetY][2] === null);
+                    if (pressedKeys["ArrowLeft"] && !(pressedKeys["a"] || pressedKeys["A"]) && entities[myId].targetX > 1) {
+                        let clearPath = tileMap[entities[myId].targetX-1][entities[myId].targetY].length <= 1 ||
+                            (tileMap[entities[myId].targetX-1][entities[myId].targetY].length >= 3 &&
+                                tileMap[entities[myId].targetX-1][entities[myId].targetY][1] === null &&
+                                tileMap[entities[myId].targetX-1][entities[myId].targetY][2] === null);
                         if (clearPath) {
-                            avatars[myId].targetX -= 1;
+                            entities[myId].targetX -= 1;
                             moved = true;
                         }
                     }
-                    if (pressedKeys["ArrowRight"] && !(pressedKeys["d"] || pressedKeys["D"]) && avatars[myId].targetX < MAP_SIZE-1) {
-                        let clearPath = tileMap[avatars[myId].targetX+1][avatars[myId].targetY].length <= 1 ||
-                            (tileMap[avatars[myId].targetX+1][avatars[myId].targetY].length >= 3 &&
-                                tileMap[avatars[myId].targetX+1][avatars[myId].targetY][1] === null &&
-                                tileMap[avatars[myId].targetX+1][avatars[myId].targetY][2] === null);
+                    if (pressedKeys["ArrowRight"] && !(pressedKeys["d"] || pressedKeys["D"]) && entities[myId].targetX < MAP_SIZE-1) {
+                        let clearPath = tileMap[entities[myId].targetX+1][entities[myId].targetY].length <= 1 ||
+                            (tileMap[entities[myId].targetX+1][entities[myId].targetY].length >= 3 &&
+                                tileMap[entities[myId].targetX+1][entities[myId].targetY][1] === null &&
+                                tileMap[entities[myId].targetX+1][entities[myId].targetY][2] === null);
                         if (clearPath) {
-                            avatars[myId].targetX += 1;
+                            entities[myId].targetX += 1;
                             moved = true;
                         }
                    }
 
                     if (moved) {
 
-                        avatars[myId].targetT = worldTime + moveTime;
-                        avatars[myId].lastT = worldTime;
+                        entities[myId].targetT = worldTime + moveTime;
+                        entities[myId].lastT = worldTime;
 
-                        let data = {x: avatars[myId].targetX,
-                                    y: avatars[myId].targetY,
-                                    t: avatars[myId].targetT}
+                        let data = {x: entities[myId].targetX,
+                                    y: entities[myId].targetY,
+                                    t: entities[myId].targetT}
 
                         connection.send(JSON.stringify(data));
 

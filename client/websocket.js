@@ -39,29 +39,28 @@ function receiveMessage(event) {
 
     if (data.hasOwnProperty("id")) {
 
-        if (avatars[data.id] === undefined) avatars[data.id] = {};
+        if (entities[data.id] === undefined) entities[data.id] = {};
 
-        if (data.hasOwnProperty("x")) avatars[data.id].targetX = data.x;
-        if (data.hasOwnProperty("y")) avatars[data.id].targetY = data.y;
-        if (data.hasOwnProperty("t")) avatars[data.id].targetT = data.t;
+        if (data.hasOwnProperty("x")) entities[data.id].targetX = data.x;
+        if (data.hasOwnProperty("y")) entities[data.id].targetY = data.y;
+        if (data.hasOwnProperty("t")) entities[data.id].targetT = data.t;
 
-        if (data.hasOwnProperty("chat")) avatars[data.id].chat = data.chat;
-        if (data.hasOwnProperty("chattime")) avatars[data.id].chattime = data.chattime;
+        if (data.hasOwnProperty("chat")) entities[data.id].chat = data.chat;
+        if (data.hasOwnProperty("chattime")) entities[data.id].chattime = data.chattime;
 
-        if (data.hasOwnProperty("image") && avatars[data.id].image === undefined) {
-            if (data.id === myId) {
-                cameraX = (avatars[myId].currentX-w/128);
-                cameraY = (avatars[myId].currentY-h/96);
+        if (data.hasOwnProperty("image")) {
+            if (entities[data.id].image === undefined && data.id === myId) {
+                cameraX = (entities[myId].currentX-w/128);
+                cameraY = (entities[myId].currentY-h/96);
                 if (isNaN(cameraX) || isNaN(cameraY)) {
-                  alert("Steve caught the NaN error!");
                   cameraX = 64-w/128;
                   cameraY = 64-h/96;
                 }
             }
-            avatars[data.id].image = document.getElementById(data.image);
+            entities[data.id].image = document.getElementById(data.image);
         }
 
-        if (data.hasOwnProperty("name")) avatars[data.id].name = data.name;
+        if (data.hasOwnProperty("name")) entities[data.id].name = data.name;
 
         console.log(event.data);
 
@@ -88,7 +87,7 @@ function receiveMessage(event) {
 
     if (data.hasOwnProperty("delete")) {
 
-        delete avatars[data.delete];
+        delete entities[data.delete];
 
     }
 

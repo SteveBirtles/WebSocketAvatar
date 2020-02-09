@@ -15,7 +15,7 @@ const wsServer = new ws.Server({server});
 let serverStartTime;
 let clientCount = 0;
 
-let avatars = {};
+let entities = {};
 let tileMap = [];
 
 if (fs.existsSync(MAP_FILE)) {
@@ -26,22 +26,27 @@ if (fs.existsSync(MAP_FILE)) {
         if (err) throw err;
         tileMap = JSON.parse(raw);
 
-        let sandbox = {output: []};
+        let vmTest = function(text) {
+            console.log("<VM TEST>" + text + "<VM TEST>");
+            return text.length;
+        };
+
+        let sandbox = {vmTest};
 
         const vm = new NodeVM({sandbox});
 
         vm.freeze(tileMap, 'tileMap');
-        vm.freeze(avatars, 'avatars');
+        vm.freeze(entities, 'entities');
 
-        vm.run(`
-            for (let x = 0; x < tileMap.length; x++) {
-                for (let y = 0; y < tileMap[x].length; y++) {
-                    output.push(tileMap[x][y].length);
-                }
-            }
-        `);
+        try {
+            vm.run(`
+                console.log("|| " + vmTest("alpha") + " ||");
+            `);
+        } catch (vmError) {
+            console.log(">>> VM ERROR: " + vmError.message);
+        }
 
-        console.log(sandbox.output);
+        console.log("| " + vmTest("beta") + " |");
 
     })
 
@@ -103,15 +108,15 @@ wsServer.on('connection', client => {
 
     console.log(`Client ${client.id} connected!`);
 
-    for (let id of Object.keys(avatars)) {
-        let avatar = {id,
-            x: avatars[id].x,
-            y: avatars[id].y,
+    for (let id of Object.keys(entities)) {
+        let entity = {id,
+            x: entities[id].x,
+            y: entities[id].y,
             t: 0,
-            name: avatars[id].name,
-            image: avatars[id].image
+            name: entities[id].name,
+            image: entities[id].image
         };
-        sendUpdate(avatar, [client]);
+        sendUpdate(entity, [client]);
     }
 
     for (let x = 0; x <= MAP_SIZE; x++) {
@@ -128,12 +133,12 @@ wsServer.on('connection', client => {
         let y = Math.floor(MAP_SIZE/2 + Math.random() * 8 - 4);
         if (tileMap[x][y].length === 1 || tries == 99) {
             if (tries === 99) console.log("100 tries to place new user!");
-            avatars[client.id] = {id: client.id, x, y, t: 0, chat: "", chattime: 0};
+            entities[client.id] = {id: client.id, x, y, t: 0, chat: "", chattime: 0};
             break;
         }
     }
 
-    sendUpdate(avatars[client.id], wsServer.clients);
+    sendUpdate(entities[client.id], wsServer.clients);
 
     client.on('message', message => {
 
@@ -193,57 +198,57 @@ wsServer.on('connection', client => {
 
           } else {
 
-              let lastX = avatars[client.id].x;
-              let lastY = avatars[client.id].y;
+              let lastX = entities[client.id].x;
+              let lastY = entities[client.id].y;
               let reset = false;
 
-              let avatar = {id: client.id};
+              let entity = {id: client.id};
 
               if (data.hasOwnProperty("x")) {
-                  avatar.x = data.x;
-                  avatars[client.id].x = data.x;
+                  entity.x = data.x;
+                  entities[client.id].x = data.x;
               }
 
               if (data.hasOwnProperty("y")) {
-                  avatar.y = data.y;
-                  avatars[client.id].y = data.y;
+                  entity.y = data.y;
+                  entities[client.id].y = data.y;
               }
 
-              if (avatars[client.id].x < 1 ||
-                  avatars[client.id].x > MAP_SIZE-1 ||
-                  avatars[client.id].y < 1 ||
-                  avatars[client.id].y > MAP_SIZE-1) reset = true;
+              if (entities[client.id].x < 1 ||
+                  entities[client.id].x > MAP_SIZE-1 ||
+                  entities[client.id].y < 1 ||
+                  entities[client.id].y > MAP_SIZE-1) reset = true;
 
-              if (tileMap[avatars[client.id].x][avatars[client.id].y].length > 1 && !(
-                  tileMap[avatars[client.id].x][avatars[client.id].y].length >= 3 &&
-                  tileMap[avatars[client.id].x][avatars[client.id].y][1] === null &&
-                  tileMap[avatars[client.id].x][avatars[client.id].y][2] === null)) reset = true;
+              if (tileMap[entities[client.id].x][entities[client.id].y].length > 1 && !(
+                  tileMap[entities[client.id].x][entities[client.id].y].length >= 3 &&
+                  tileMap[entities[client.id].x][entities[client.id].y][1] === null &&
+                  tileMap[entities[client.id].x][entities[client.id].y][2] === null)) reset = true;
 
-              let d = Math.sqrt(Math.pow(lastX - avatars[client.id].x, 2) + Math.pow(lastY - avatars[client.id].y, 2));
+              let d = Math.sqrt(Math.pow(lastX - entities[client.id].x, 2) + Math.pow(lastY - entities[client.id].y, 2));
               if (d >= 2) {
                 console.log("Toooooo fast!");
                 reset = true;
               }
 
-              for (let id of Object.keys(avatars)) {
+              for (let id of Object.keys(entities)) {
                   if (id === String(client.id)) continue;
-                  if (avatars[id].x === avatars[client.id].x && avatars[id].y === avatars[client.id].y) reset = true;
+                  if (entities[id].x === entities[client.id].x && entities[id].y === entities[client.id].y) reset = true;
               }
 
 
               if (data.hasOwnProperty("t")) {
-                  avatars[client.id].t = data.t;
-                  avatar.t = data.t;
+                  entities[client.id].t = data.t;
+                  entity.t = data.t;
                   if (data.t < Date.now() + 175) {
                       data.t = Date.now() + 175;
                   }
               }
 
               if (reset) {
-                  avatars[client.id].x = lastX;
-                  avatars[client.id].y = lastY;
-                  avatar.x = lastX;
-                  avatar.y = lastY;
+                  entities[client.id].x = lastX;
+                  entities[client.id].y = lastY;
+                  entity.x = lastX;
+                  entity.y = lastY;
               }
 
               if (data.hasOwnProperty("chat")) {
@@ -252,20 +257,20 @@ wsServer.on('connection', client => {
                     data.chat = data.chat.subString(0, 64);
                   }
 
-                  avatars[client.id].chat = data.chat;
-                  avatar.chat = data.chat;
+                  entities[client.id].chat = data.chat;
+                  entity.chat = data.chat;
               }
               if (data.hasOwnProperty("chattime")) {
                   if (data.chattime > Date.now() + 2000) {
                       data.chattime = Date.now() + 2000;
                   }
-                  avatars[client.id].chattime = data.chattime;
-                  avatar.chattime = data.chattime;
+                  entities[client.id].chattime = data.chattime;
+                  entity.chattime = data.chattime;
               }
 
               if (data.hasOwnProperty("image")) {
-                  avatars[client.id].image = data.image;
-                  avatar.image = data.image;
+                  entities[client.id].image = data.image;
+                  entity.image = data.image;
               }
 
               if (data.hasOwnProperty("name")) {
@@ -275,18 +280,18 @@ wsServer.on('connection', client => {
                   }
 
                   let count = 0;
-                  for (let id of Object.keys(avatars)) {
-                      if (id !== client.id && avatars[id].originalName === data.name) count++;
+                  for (let id of Object.keys(entities)) {
+                      if (id !== client.id && entities[id].originalName === data.name) count++;
                   }
 
-                  avatars[client.id].originalName = data.name;
+                  entities[client.id].originalName = data.name;
                   if (count > 0) data.name += " (" + (count + 1) + ")";
-                  avatars[client.id].name = data.name;
-                  avatar.name = data.name;
+                  entities[client.id].name = data.name;
+                  entity.name = data.name;
 
               }
 
-              sendUpdate(avatar, wsServer.clients);
+              sendUpdate(entity, wsServer.clients);
 
           }
 
@@ -306,14 +311,14 @@ wsServer.on('connection', client => {
         for (let c of wsServer.clients) {
             c.send(JSON.stringify(deleteData));
         }
-        delete avatars[client.id];
+        delete entities[client.id];
     });
 
 
 });
 
-function sendUpdate(avatar, clients) {
-    let broadcast = JSON.stringify(avatar);
+function sendUpdate(entity, clients) {
+    let broadcast = JSON.stringify(entity);
     for (let c of clients) {
         c.send(broadcast);
     }
