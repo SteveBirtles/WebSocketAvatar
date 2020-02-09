@@ -148,12 +148,12 @@ wsServer.on('connection', client => {
               let x, y, z;
 
               if (data.hasOwnProperty("x")) x = data.x;
-              if (x < 1) x = 1;
-              if (x > MAP_SIZE-1) x = MAP_SIZE-1;
+              if (x < 0) x = 0;
+              if (x > MAP_SIZE) x = MAP_SIZE;
 
               if (data.hasOwnProperty("y")) y = data.y;
-              if (y < 1) y = 1;
-              if (y > MAP_SIZE-1) y = MAP_SIZE-1;
+              if (y < 0) y = 0;
+              if (y > MAP_SIZE) y = MAP_SIZE;
 
               if (data.hasOwnProperty("z")) z = data.z;
               if (z < 0) z = 0;

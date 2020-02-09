@@ -1,6 +1,8 @@
 const moveTime = 200;
 const chatLifespan = 5000;
 
+const MAX_PATH_LENGTH = 1000;
+
 let myId;
 let avatars = {};
 let shadow = new Image();
@@ -78,5 +80,98 @@ function updateAvatars() {
     if (cameraY < 0) cameraY = 0;
     if (cameraX > MAP_SIZE-w/64) cameraX = MAP_SIZE-w/64;
     if (cameraY > MAP_SIZE-h/48) cameraY = MAP_SIZE-h/48;
+
+}
+
+function calculatePath(endX, endY) {
+
+    let nodes = [];
+
+    if (endX < 1 || endY < 1 || endX > MAP_SIZE-1 || endY > MAP_SIZE-1) return [];
+    if (tileMap[endX][endY].length > 1) return [];
+    for (let id of Object.keys(avatars)) {
+        if (endX === avatars[id].targetX && endY === avatars[id].targetY) return [];
+    }
+
+    let adjacencies = [{x: 0, y:-1, g:10}, {x:  1, y:-1, g:14}, {x: 1, y:0, g:10}, {x: 1, y: 1, g:14},
+                       {x: 0, y: 1, g:10}, {x: -1, y: 1, g:14}, {x:-1, y:0, g:10}, {x:-1, y:-1, g:14}];
+
+    let startX = avatars[myId].targetX;
+    let startY = avatars[myId].targetY;
+
+    let dx = Math.abs(startX - endX);
+    let dy = Math.abs(startY - endY);
+    let d = (dx < dy ? dx : dy) * 14 + Math.abs(dx - dy) * 10;
+
+    nodes = [{x:startX, y:startY, g:0, h:d, f:d, from: null, done: false, n:0}];
+
+    search:
+    for (let n = 1; n <= MAX_PATH_LENGTH; n++) {
+
+        let current;
+        let bestF = 999999;
+        for (let node of nodes) {
+            if (node.done) continue;
+            if (node.f < bestF) {
+                bestF = node.f;
+                current = node;
+            }
+        }
+
+        adjs:
+        for (let adj of adjacencies) {
+
+            let x = current.x + adj.x;
+            let y = current.y + adj.y;
+            if (x < 1 || y < 1 || x > MAP_SIZE-1 || y > MAP_SIZE-1) continue;
+
+            if (tileMap[x][y].length > 1) continue;
+            if (adj.x !== 0 && adj.y !== 0) {
+                if (tileMap[current.x][y].length > 1) continue;
+                if (tileMap[x][current.y].length > 1) continue;
+            }
+
+            for (let id of Object.keys(avatars)) {
+                if (x === avatars[id].targetX && y === avatars[id].targetY) continue;
+            }
+
+            for (let node of nodes) {
+                if (x === node.x && y === node.y) {
+                    if (!node.done) {
+                        let g = current.g + adj.g;
+                        if (g < node.g) {
+                            node.g = g;
+                            node.from = current;
+                            node.f = node.h + g;
+                            node.n = n;
+                        }
+                    }
+                    continue adjs;
+                }
+            }
+
+            let hx = Math.abs(x - endX);
+            let hy = Math.abs(y - endY);
+            let h = (hx < hy ? hx : hy) * 14 + Math.abs(hx - hy) * 10;
+            let g = current.g + adj.g;
+            nodes.push({x, y, g, h, f:g+h, from: current, done: false, n});
+
+            if (x === endX && y === endY) {
+                let path = [];
+                let node = nodes.pop();
+                while (node != null) {
+                    path.unshift(node);
+                    node = node.from;
+                }
+                return path;
+            }
+
+        }
+
+        current.done = true;
+
+    }
+
+    return [];
 
 }

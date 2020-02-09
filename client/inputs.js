@@ -5,7 +5,7 @@ let pressedKeys = {};
 let selectedTile = 86;
 let blockPlace = false;
 let mouseX, mouseY;
-let pathTargetX = null, pathTargetY = null;
+let myPath = [];
 let chatting = false, modeChooser = false;
 let xRay = false, miniMap = false, cameraMouse = false;
 let pendingTileChanges = [];
@@ -37,8 +37,9 @@ function processInputs() {
         }
 
         if (leftMouseDown) {
-            pathTargetX = mouseX;
-            pathTargetY = mouseY;
+
+            myPath = calculatePath(mouseX, mouseY);
+
         } else if (rightMouseDown && mouseX >= 0 && mouseY >= 0 && mouseX < MAP_SIZE && mouseY < MAP_SIZE) {
             let d = Math.pow(mouseX - avatars[myId].currentX, 2) + Math.pow(mouseY - avatars[myId].currentY, 2)
             if ((d === 0 && tileMap[mouseX][mouseY].length === 0) || (d > 0 && d <= 5 && mouseX >= 0 && mouseY >= 0 && mouseX < MAP_SIZE && mouseY < MAP_SIZE)) {
@@ -316,13 +317,15 @@ function processInputs() {
                     }
 
                     if (pressedKeys["ArrowUp"] || pressedKeys["ArrowDown"] || pressedKeys["ArrowLeft"] || pressedKeys["ArrowRight"]) {
-                        pathTargetX = null;
-                        pathTargetY = null
+                        myPath = [];
+                    } else if (myPath.length > 0) {
+                        let next = myPath.shift();
+                        avatars[myId].targetX = next.x;
+                        avatars[myId].targetY = next.y;
+                        moved = true;
                     }
 
-
-                    if ((pressedKeys["ArrowUp"] || (pathTargetY !== null && pathTargetY < avatars[myId].targetY))
-                          && !(pressedKeys["w"] || pressedKeys["W"]) && avatars[myId].targetY > 1) {
+                    if (pressedKeys["ArrowUp"] && !(pressedKeys["w"] || pressedKeys["W"]) && avatars[myId].targetY > 1) {
                         let clearPath = tileMap[avatars[myId].targetX][avatars[myId].targetY-1].length <= 1 ||
                             (tileMap[avatars[myId].targetX][avatars[myId].targetY-1].length >= 3 &&
                                 tileMap[avatars[myId].targetX][avatars[myId].targetY-1][1] === null &&
@@ -332,8 +335,7 @@ function processInputs() {
                             moved = true;
                         }
                     }
-                    if ((pressedKeys["ArrowDown"] || (pathTargetY !== null && pathTargetY > avatars[myId].targetY))
-                            && !(pressedKeys["s"] || pressedKeys["S"]) && avatars[myId].targetY < MAP_SIZE-1) {
+                    if (pressedKeys["ArrowDown"] && !(pressedKeys["s"] || pressedKeys["S"]) && avatars[myId].targetY < MAP_SIZE-1) {
                         let clearPath = tileMap[avatars[myId].targetX][avatars[myId].targetY+1].length <= 1 ||
                             (tileMap[avatars[myId].targetX][avatars[myId].targetY+1].length >= 3 &&
                                 tileMap[avatars[myId].targetX][avatars[myId].targetY+1][1] === null &&
@@ -343,8 +345,7 @@ function processInputs() {
                             moved = true;
                         }
                     }
-                    if ((pressedKeys["ArrowLeft"] || (pathTargetX !== null && pathTargetX < avatars[myId].targetX))
-                            && !(pressedKeys["a"] || pressedKeys["A"]) && avatars[myId].targetX > 1) {
+                    if (pressedKeys["ArrowLeft"] && !(pressedKeys["a"] || pressedKeys["A"]) && avatars[myId].targetX > 1) {
                         let clearPath = tileMap[avatars[myId].targetX-1][avatars[myId].targetY].length <= 1 ||
                             (tileMap[avatars[myId].targetX-1][avatars[myId].targetY].length >= 3 &&
                                 tileMap[avatars[myId].targetX-1][avatars[myId].targetY][1] === null &&
@@ -354,8 +355,7 @@ function processInputs() {
                             moved = true;
                         }
                     }
-                    if ((pressedKeys["ArrowRight"] || (pathTargetX !== null && pathTargetX > avatars[myId].targetX))
-                            && !(pressedKeys["d"] || pressedKeys["D"]) && avatars[myId].targetX < MAP_SIZE-1) {
+                    if (pressedKeys["ArrowRight"] && !(pressedKeys["d"] || pressedKeys["D"]) && avatars[myId].targetX < MAP_SIZE-1) {
                         let clearPath = tileMap[avatars[myId].targetX+1][avatars[myId].targetY].length <= 1 ||
                             (tileMap[avatars[myId].targetX+1][avatars[myId].targetY].length >= 3 &&
                                 tileMap[avatars[myId].targetX+1][avatars[myId].targetY][1] === null &&
@@ -364,7 +364,7 @@ function processInputs() {
                             avatars[myId].targetX += 1;
                             moved = true;
                         }
-                      }
+                   }
 
                     if (moved) {
 
