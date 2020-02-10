@@ -42,10 +42,14 @@ function processInputs() {
             myPath = calculatePath(mouseX, mouseY);
 
         } else if (rightMouseDown && mouseX >= 0 && mouseY >= 0 && mouseX < MAP_SIZE && mouseY < MAP_SIZE) {
-            let d = Math.pow(mouseX - entities[myId].currentX, 2) + Math.pow(mouseY - entities[myId].currentY, 2)
-            if ((d === 0 && tileMap[mouseX][mouseY].length === 0) || (d > 0 && d <= 5 && mouseX >= 0 && mouseY >= 0 && mouseX < MAP_SIZE && mouseY < MAP_SIZE)) {
+
+            let dx = Math.abs(mouseX - entities[myId].currentX);
+            let dy = Math.abs(mouseY - entities[myId].currentY);
+
+            if ((dx === 0 && dy === 0 && tileMap[mouseX][mouseY].length === 0) || (dx <= 2 && dy <= 2 && mouseX >= 0 && mouseY >= 0 && mouseX < MAP_SIZE && mouseY < MAP_SIZE)) {
                 interact = {x: mouseX, y: mouseY};
             }
+
         }
 
     }
@@ -318,12 +322,19 @@ function processInputs() {
                             let data = {
 
                                 spawn: `let a = Math.floor(Math.random()*43)+1;
-                                        setImage('avatar' + a);`,
+                                        setImage('avatar' + a);
+                                        setSpeed(1);`,
 
                                 script: `if (moved()) {
-                                            let dx = Math.floor(Math.random()*3 - 1);
-                                            let dy = Math.floor(Math.random()*3 - 1);
-                                            move(dx, dy);
+                                            let position = getPosition();
+                                            if (position.x > 68 || position.x < 60) {
+                                                selfDestruct();
+                                            } else {
+                                                setStack(0,0,[50]);
+                                                let dx = Math.floor(Math.random()*3 - 1);
+                                                let dy = Math.floor(Math.random()*3 - 1);
+                                                move(dx, dy);
+                                            }
                                         }`
 
                             };

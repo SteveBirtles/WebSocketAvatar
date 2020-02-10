@@ -202,10 +202,12 @@ function renderentitiestrip(context, y) {
                             context.fillStyle = 'white';
                             context.font = 'bold 24px Arial';
                             context.textAlign = 'center';
-                            context.fillText(entity.name + ": " + entity.chat,
-                            entity.currentX*64 - cameraX*64, entity.currentY*48-128 - cameraY*48);
 
-                        } else if (entity.name !== undefined ) {
+                            let text = entity.chat;
+                            if (entity.name !== undefined) text = entity.name + ": " + text;
+                            context.fillText(text, entity.currentX*64 - cameraX*64, entity.currentY*48-128 - cameraY*48);
+
+                        } else if (entity.name !== undefined) {
 
                             context.fillStyle = 'grey';
                             context.font = '24px Arial';

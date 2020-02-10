@@ -2,6 +2,7 @@ const MAP_SIZE = 128;
 const MAP_FILE = "map.json";
 const BASE_TILE = 0;
 
+const avatarScript = null;
 const chatLifespan = 5000;
 
 const express = require('express');
@@ -111,7 +112,8 @@ wsServer.on('connection', client => {
             y: entities[id].y,
             t: 0,
             name: entities[id].name,
-            image: entities[id].image
+            image: entities[id].image,
+            solid: true
         };
         sendUpdate(entity, [client]);
     }
@@ -129,12 +131,12 @@ wsServer.on('connection', client => {
         let y = Math.floor(MAP_SIZE/2 + Math.random() * 8 - 4);
         if (tileMap[x][y].length === 1 || tries == 99) {
             if (tries === 99) console.log("100 tries to place new user!");
-            entities[client.id] = newEntity(client.id, x, y, null);
+            entities[client.id] = newEntity(client.id, x, y, avatarScript);
             break;
         }
     }
 
-    sendUpdate({id: client.id, x: entities[client.id].x, y: entities[client.id].y}, wsServer.clients);
+    sendUpdate({id: client.id, x: entities[client.id].x, y: entities[client.id].y, solid: true}, wsServer.clients);
 
     client.on('message', message => {
 
@@ -147,7 +149,7 @@ wsServer.on('connection', client => {
           if (data.hasOwnProperty("spawn")) {
 
               entityCount++;
-              let n = {id: entityCount, x: entities[client.id].x, y: entities[client.id].y};
+              let n = {id: entityCount, x: entities[client.id].x, y: entities[client.id].y, solid: true};
 
               entities[n.id] = newEntity(n.id, n.x, n.y, data.script);
 
@@ -376,11 +378,26 @@ function newEntity(id, x, y, script) {
             },
 
             setSpeed: function(speed) {
+                if (speed < 0.1) speed = 0.1;
+                if (speed > 10) speed = 10;
                 entities[id].moveTime = 1000 / speed;
             },
 
             listNearby: function(radius) {
-                // !!!
+
+                let list = [];
+                let u = entities[id].x;
+                let v = entities[id].y;
+                for (let i of Object.keys(entities)) {
+                    if (i === String(id)) continue;
+                    let e = entities[i];
+                    let d = Math.sqrt(Math.pow(u - e.x, 2) + Math.pow(v - e.y, 2));
+                    if (d <= radius) {
+                        list.push({id: i, x: e.x, y: e.y, speed: e.speed, name: e.name, group: e.group, image: e.image, solid: e.solid});
+                    }
+                }
+                return list;
+
             },
 
             worldTime: function() {
@@ -405,15 +422,41 @@ function newEntity(id, x, y, script) {
             },
 
             getStack: function(dx, dy) {
-                // !!!
+
+                if (dx >= -2 && dy >= -2 && dx <= 2 && dy <= 2) {
+                    let u = entities[id].x + dx;
+                    let v = entities[id].y + dy;
+                    if (u >= 0 && v >= 0 && u <= MAP_SIZE && v <= MAP_SIZE) {
+                        return tileMap[u][v];
+                    }
+                }
+
             },
 
             setStack: function(dx, dy, stack) {
-                // !!!
+
+                if (!Array.isArray(stack)) throw "Stack is not a valid array";
+
+                if (stack.length > 12) throw "Stack is too long";
+                for (let t of stack) {
+                    if (t === null) continue;
+                    if (typeof t === 'number') continue;
+                    throw "Stack entry is not null or a number";
+                }
+
+                if (dx >= -2 && dy >= -2 && dx <= 2 && dy <= 2) {
+                    let u = entities[id].x + dx;
+                    let v = entities[id].y + dy;
+                    if (u >= 0 && v >= 0 && u <= MAP_SIZE && v <= MAP_SIZE) {
+                        tileMap[u][v] = stack;
+                        sendTileStack(u, v, tileMap[u][v], wsServer.clients);
+                    }
+                }
+
             },
 
-            setSolid: function(solidity) {
-                entities[id].solid = solidity;
+            setSolid: function(solid) {
+                entities[id].solid = solid;
             },
 
             setGroup: function(group) {
@@ -448,7 +491,11 @@ function newEntity(id, x, y, script) {
             },
 
             selfDestruct: function() {
-                // !!!
+                let deleteData = {delete: id};
+                for (let c of wsServer.clients) {
+                    c.send(JSON.stringify(deleteData));
+                }
+                delete entities[id];
             }
 
         }})
