@@ -9,6 +9,7 @@ let myPath = [];
 let chatting = false, modeChooser = false;
 let xRay = false, miniMap = false, cameraMouse = false;
 let pendingTileChanges = [];
+const moveTime = 200;
 
 const NORMAL_MODE = 0;
 const DELETE_MODE = 1;
@@ -312,6 +313,23 @@ function processInputs() {
                           if (selectedTile >= tiles.length-1) selectedTile = 0;
                         }
                         blockPlace = true;
+                    } else if (pressedKeys["Enter"]) {
+                        if (!blockPlace) {
+                            let data = {
+
+                                spawn: `let a = Math.floor(Math.random()*43)+1;
+                                        setImage('avatar' + a);`,
+
+                                script: `if (moved()) {
+                                            let dx = Math.floor(Math.random()*3 - 1);
+                                            let dy = Math.floor(Math.random()*3 - 1);
+                                            move(dx, dy);
+                                        }`
+
+                            };
+                            connection.send(JSON.stringify(data));
+                        }
+                        blockPlace = true;
                     } else {
                       blockPlace = false;
                     }
@@ -369,7 +387,6 @@ function processInputs() {
                     if (moved) {
 
                         entities[myId].targetT = worldTime + moveTime;
-                        entities[myId].lastT = worldTime;
 
                         let data = {x: entities[myId].targetX,
                                     y: entities[myId].targetY,

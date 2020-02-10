@@ -56,14 +56,20 @@ function renderMiniMap(context) {
     for (let id of Object.keys(entities)) {
         let entity = entities[id];
 
-        context.fillStyle = 'white';
+        if (entity.name !== undefined) {
+            context.fillStyle = 'white';
+        } else {
+            context.fillStyle = 'cyan';
+        }
         context.beginPath();
         context.arc(x0 + (entity.currentX + 0.5)*miniMapTileSize, y0 + (entity.currentY + 0.5)*miniMapTileSize, miniMapTileSize/2, 0, 2*Math.PI);
         context.fill();
 
-        context.font = '12px Arial';
-        context.textAlign = 'center';
-        context.fillText(entity.name, x0 + entity.currentX*miniMapTileSize, y0 + (entity.currentY - 1)*miniMapTileSize);
+        if (entity.name !== undefined && entity.name.length > 0) {
+            context.font = '12px Arial';
+            context.textAlign = 'center';
+            context.fillText(entity.name, x0 + entity.currentX*miniMapTileSize, y0 + (entity.currentY - 1)*miniMapTileSize);
+        }
 
     }
 

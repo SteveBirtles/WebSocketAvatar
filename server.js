@@ -2,6 +2,8 @@ const MAP_SIZE = 128;
 const MAP_FILE = "map.json";
 const BASE_TILE = 0;
 
+const chatLifespan = 5000;
+
 const express = require('express');
 const http = require('http');
 const ws = require('ws');
@@ -13,10 +15,11 @@ const server = http.createServer(app);
 const wsServer = new ws.Server({server});
 
 let serverStartTime;
-let clientCount = 0;
+let entityCount = 0;
 
 let entities = {};
 let tileMap = [];
+let groupFlags = {};
 
 if (fs.existsSync(MAP_FILE)) {
 
@@ -25,29 +28,6 @@ if (fs.existsSync(MAP_FILE)) {
     fs.readFile('map.json', 'utf8', function(err, raw) {
         if (err) throw err;
         tileMap = JSON.parse(raw);
-
-        let vmTest = function(text) {
-            console.log("<VM TEST>" + text + "<VM TEST>");
-            return text.length;
-        };
-
-        let sandbox = {vmTest};
-
-        const vm = new NodeVM({sandbox});
-
-        vm.freeze(tileMap, 'tileMap');
-        vm.freeze(entities, 'entities');
-
-        try {
-            vm.run(`
-                console.log("|| " + vmTest("alpha") + " ||");
-            `);
-        } catch (vmError) {
-            console.log(">>> VM ERROR: " + vmError.message);
-        }
-
-        console.log("| " + vmTest("beta") + " |");
-
     })
 
 } else {
@@ -65,7 +45,6 @@ if (fs.existsSync(MAP_FILE)) {
         if (err) throw err;
     });
 }
-
 
 const port = 8081;
 
@@ -91,6 +70,24 @@ server.listen(port, function(){
 
   setInterval(() => {
 
+      for (let id of Object.keys(entities)) {
+          let entity = entities[id];
+
+          if (entity.script !== undefined && entity.script !== null && entity.script !== "") {
+              try {
+                  //console.log(">>> RUNNING: " + entity.script);
+                   entities[entity.id].vm.run(entity.script);
+               } catch (vmError) {
+                   console.log(">>> VM ERROR: " + vmError.message);
+               }
+           }
+
+      }
+
+  }, 100);
+
+  setInterval(() => {
+
       console.log("*** SAVING MAP (" + (Date.now() - serverStartTime) + ") ***");
 
       fs.writeFile('map.json', JSON.stringify(tileMap), function(err) {
@@ -103,8 +100,8 @@ server.listen(port, function(){
 
 wsServer.on('connection', client => {
 
-    clientCount++;
-    client.id = clientCount;
+    entityCount++;
+    client.id = entityCount;
 
     console.log(`Client ${client.id} connected!`);
 
@@ -125,20 +122,19 @@ wsServer.on('connection', client => {
       }
     }
 
-    let newClientData = {you: client.id, serverTime: Date.now() - serverStartTime, x: 64, y: 64};
-    client.send(JSON.stringify(newClientData));
+    client.send(JSON.stringify({you: client.id, serverTime: Date.now() - serverStartTime, x: 64, y: 64}));
 
     for (let tries = 0; tries < 100; tries++) {
         let x = Math.floor(MAP_SIZE/2 + Math.random() * 8 - 4);
         let y = Math.floor(MAP_SIZE/2 + Math.random() * 8 - 4);
         if (tileMap[x][y].length === 1 || tries == 99) {
             if (tries === 99) console.log("100 tries to place new user!");
-            entities[client.id] = {id: client.id, x, y, t: 0, chat: "", chattime: 0};
+            entities[client.id] = newEntity(client.id, x, y, null);
             break;
         }
     }
 
-    sendUpdate(entities[client.id], wsServer.clients);
+    sendUpdate({id: client.id, x: entities[client.id].x, y: entities[client.id].y}, wsServer.clients);
 
     client.on('message', message => {
 
@@ -148,7 +144,25 @@ wsServer.on('connection', client => {
 
           console.log(client.id + " --> " + message);
 
-          if (data.hasOwnProperty("tile")) {
+          if (data.hasOwnProperty("spawn")) {
+
+              entityCount++;
+              let n = {id: entityCount, x: entities[client.id].x, y: entities[client.id].y};
+
+              entities[n.id] = newEntity(n.id, n.x, n.y, data.script);
+
+              sendUpdate(n, wsServer.clients);
+
+              if (data.spawn !== "") {
+                  try {
+                      //console.log(">>> SPAWNING: " + data.spawn);
+                       entities[n.id].vm.run(data.spawn);
+                   } catch (vmError) {
+                       console.log(">>> VM ERROR: " + vmError.message);
+                   }
+               }
+
+          } else if (data.hasOwnProperty("tile")) {
 
               let x, y, z;
 
@@ -200,18 +214,25 @@ wsServer.on('connection', client => {
 
               let lastX = entities[client.id].x;
               let lastY = entities[client.id].y;
+              let lastT = entities[client.id].t;
               let reset = false;
 
-              let entity = {id: client.id};
+              let entityUpdate = {id: client.id};
 
               if (data.hasOwnProperty("x")) {
-                  entity.x = data.x;
                   entities[client.id].x = data.x;
+                  entityUpdate.x = data.x;
               }
 
               if (data.hasOwnProperty("y")) {
-                  entity.y = data.y;
                   entities[client.id].y = data.y;
+                  entityUpdate.y = data.y;
+              }
+
+              if (data.hasOwnProperty("x") || data.hasOwnProperty("y")) {
+                  let t = Date.now() - serverStartTime + entities[client.id].moveTime;
+                  entities[client.id].t = t;
+                  entityUpdate.t = t;
               }
 
               if (entities[client.id].x < 1 ||
@@ -235,49 +256,36 @@ wsServer.on('connection', client => {
                   if (entities[id].x === entities[client.id].x && entities[id].y === entities[client.id].y) reset = true;
               }
 
-
-              if (data.hasOwnProperty("t")) {
-                  entities[client.id].t = data.t;
-                  entity.t = data.t;
-                  if (data.t < Date.now() + 175) {
-                      data.t = Date.now() + 175;
-                  }
-              }
-
               if (reset) {
                   entities[client.id].x = lastX;
                   entities[client.id].y = lastY;
-                  entity.x = lastX;
-                  entity.y = lastY;
+                  entities[client.id].t = lastT;
+                  entityUpdate.x = lastX;
+                  entityUpdate.y = lastY;
+                  entityUpdate.t = lastT;
               }
 
               if (data.hasOwnProperty("chat")) {
 
-                  if (data.chat.length > 64) {
-                    data.chat = data.chat.subString(0, 64);
-                  }
+                  if (data.chat.length > 64) data.chat = data.chat.subString(0, 64);
+                  let t = Date.now() - serverStartTime + chatLifespan;
 
                   entities[client.id].chat = data.chat;
-                  entity.chat = data.chat;
-              }
-              if (data.hasOwnProperty("chattime")) {
-                  if (data.chattime > Date.now() + 2000) {
-                      data.chattime = Date.now() + 2000;
-                  }
-                  entities[client.id].chattime = data.chattime;
-                  entity.chattime = data.chattime;
+                  entities[client.id].chattime = t;
+
+                  entityUpdate.chattime = t;
+                  entityUpdate.chat = data.chat;
+
               }
 
               if (data.hasOwnProperty("image")) {
                   entities[client.id].image = data.image;
-                  entity.image = data.image;
+                  entityUpdate.image = data.image;
               }
 
               if (data.hasOwnProperty("name")) {
 
-                  if (data.name.length > 64) {
-                    data.name = data.name.subString(0, 64);
-                  }
+                  if (data.name.length > 64) data.name = data.name.subString(0, 64);
 
                   let count = 0;
                   for (let id of Object.keys(entities)) {
@@ -287,11 +295,11 @@ wsServer.on('connection', client => {
                   entities[client.id].originalName = data.name;
                   if (count > 0) data.name += " (" + (count + 1) + ")";
                   entities[client.id].name = data.name;
-                  entity.name = data.name;
+                  entityUpdate.name = data.name;
 
               }
 
-              sendUpdate(entity, wsServer.clients);
+              sendUpdate(entityUpdate, wsServer.clients);
 
           }
 
@@ -329,4 +337,122 @@ function sendTileStack(x, y, stack, clients) {
     for (let c of clients) {
         c.send(broadcast);
     }
+}
+
+function newEntity(id, x, y, script) {
+
+    if (script === undefined) script = null;
+
+    return {
+
+        id, x, y, script,
+
+        t: 0, chat: "", chattime: 0, moveTime: 200, flags: {}, solid: true, group: "",
+
+        vm: new NodeVM({sandbox: {
+
+            getPosition: function() {
+                return {
+                    x: entities[id].x,
+                    y: entities[id].y
+                };
+            },
+
+            move: function(dx, dy) {
+                if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1) {
+                    entities[id].x += dx;
+                    entities[id].y += dy;
+                    entities[id].t = Date.now() - serverStartTime + entities[id].moveTime;
+                    sendUpdate({id, x: entities[id].x, y: entities[id].y, t: entities[id].t}, wsServer.clients);
+                }
+            },
+
+            moved: function() {
+                return (entities[id].t < Date.now() - serverStartTime);
+            },
+
+            getSpeed: function() {
+                return 1000 / entities[id].moveTime;
+            },
+
+            setSpeed: function(speed) {
+                entities[id].moveTime = 1000 / speed;
+            },
+
+            listNearby: function(radius) {
+                // !!!
+            },
+
+            worldTime: function() {
+                return Date.now() - serverStartTime;
+            },
+
+            setImage: function(image) {
+                entities[id].image = image;
+                sendUpdate({id, image}, wsServer.clients);
+            },
+
+            getImage: function() {
+                return entities[id].image;
+            },
+
+            getFlag: function(flag) {
+                return entities[id].flags[flag];
+            },
+
+            setFlag: function(flag, value) {
+                entities[id].flags[flag] = value;
+            },
+
+            getStack: function(dx, dy) {
+                // !!!
+            },
+
+            setStack: function(dx, dy, stack) {
+                // !!!
+            },
+
+            setSolid: function(solidity) {
+                entities[id].solid = solidity;
+            },
+
+            setGroup: function(group) {
+                if (groupFlags[group] === undefined) groupFlags[group] = {};
+                entities[id].group = group;
+            },
+
+            getGroup: function() {
+                return entities[id].group;
+            },
+
+            getGroupFlag: function(flag) {
+                if (entities[id].group === undefined || entities[id].group === "") {
+                    return undefined;
+                } else if (groupFlags[entities[id].group] === undefined) {
+                    return undefined;
+                } else {
+                    return groupFlags[entities[id].group][flag];
+                }
+            },
+
+            setGroupFlag: function(flag, value) {
+                if (groupFlags[entities[id].group] !== undefined) {
+                    groupFlags[entities[id].group][flag] = value;
+                }
+            },
+
+            say: function(text) {
+                entities[id].chat = text;
+                entities[id].chattime = Date.now() - serverStartTime + chatLifespan;
+                sendUpdate({id, chat: entities[id].chat, chattime: entities[id].chattime}, wsServer.clients);
+            },
+
+            selfDestruct: function() {
+                // !!!
+            }
+
+        }})
+
+    };
+
 }

@@ -7,7 +7,7 @@ function chat(event) {
         let text = event.target.value;
         if (text.length > 128) text = text.substring(0, 128);
 
-        let chatData = {chat: text, chattime: worldTime + chatLifespan}
+        let chatData = {chat: text}
         connection.send(JSON.stringify(chatData));
 
         event.target.value = "";

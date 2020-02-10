@@ -1,6 +1,3 @@
-const moveTime = 200;
-const chatLifespan = 5000;
-
 const MAX_PATH_LENGTH = 1000;
 
 let myId;
@@ -29,21 +26,28 @@ function updateEntities() {
             entity.currentY = entity.targetY;
         }
 
-        if (worldTime >= entity.targetT &&
-            (entity.currentX != entity.targetX ||
-              entity.currentY != entity.targetY)) {
+        if (worldTime >= entity.targetT) {
 
-            entity.currentX = entity.targetX;
-            entity.currentY = entity.targetY;
+            if (entity.currentX != entity.targetX || entity.currentY != entity.targetY) {
+                  entity.currentX = entity.targetX;
+                  entity.currentY = entity.targetY;
+              }
 
         } else if (lastClientTime !== undefined) {
+        
+            let deltaX = entity.targetX - entity.currentX;
+            let deltaY = entity.targetY - entity.currentY;
+            let tMinus = entity.targetT - worldTime;
 
-            let dx = (entity.targetX - entity.currentX) / (entity.targetT - worldTime);
-            let dy = (entity.targetY - entity.currentY) / (entity.targetT - worldTime);
-            let dt = clientTime - lastClientTime;
+            let frameLength = clientTime - lastClientTime;
 
-            if (!isNaN(dx)) entity.currentX += dx * dt;
-            if (!isNaN(dy)) entity.currentY += dy * dt;
+            if (tMinus <= 0 || frameLength > tMinus) {
+                entity.currentX = entity.targetX;
+                entity.currentY = entity.targetY;
+            } else if (frameLength >= 0 && tMinus > 0) {
+                entity.currentX += frameLength * deltaX / tMinus;
+                entity.currentY += frameLength * deltaY / tMinus;
+            }
 
         }
 
@@ -83,12 +87,21 @@ function updateEntities() {
 
 }
 
+function passableTile(x, y) {
+
+    if (tileMap[x][y].length <= 1) return true;
+    if (tileMap[x][y].length >= 3 && tileMap[x][y][1] === null && tileMap[x][y][2] === null) return true;
+
+    return false;
+
+}
+
 function calculatePath(endX, endY) {
 
     let nodes = [];
 
     if (endX < 1 || endY < 1 || endX > MAP_SIZE-1 || endY > MAP_SIZE-1) return [];
-    if (tileMap[endX][endY].length > 1) return [];
+    if (!passableTile(endX, endY)) return [];
     for (let id of Object.keys(entities)) {
         if (endX === entities[id].targetX && endY === entities[id].targetY) return [];
     }
@@ -123,12 +136,13 @@ function calculatePath(endX, endY) {
 
             let x = current.x + adj.x;
             let y = current.y + adj.y;
+
             if (x < 1 || y < 1 || x > MAP_SIZE-1 || y > MAP_SIZE-1) continue;
 
-            if (tileMap[x][y].length > 1) continue;
+            if (!passableTile(x, y)) continue;
             if (adj.x !== 0 && adj.y !== 0) {
-                if (tileMap[current.x][y].length > 1) continue;
-                if (tileMap[x][current.y].length > 1) continue;
+                if (!passableTile(current.x, y)) continue;
+                if (!passableTile(x, current.y)) continue;
             }
 
             for (let id of Object.keys(entities)) {
