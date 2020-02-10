@@ -72,6 +72,42 @@ h1 {
     width: 768px;
 }
 
+#newentity {
+    display: none;
+    top: 10px;
+    left: 10px;
+    position: absolute;
+    width: 800px;
+    padding: 16px;
+    background-color: grey;
+    border: 1px solid black;
+    z-index: 2;
+    float: left;
+    text-align: center;
+}
+
+#spawn {
+    font-size: 16pt;
+    width: 768px;
+    height: 200px;
+}
+
+#script {
+    font-size: 16pt;
+    width: 768px;
+    height: 400px;
+}
+
+#newentitybutton {
+    margin-top: 8px;
+    font-size: 24px;
+    height: 40px;
+    width: 150px;
+    border: none;
+    background-color: silver;
+    border: 5px solid silver;
+}
+
 #avatarCanvas {
     background-color: black;
     display: none;
@@ -84,7 +120,18 @@ h1 {
     display: none;
 }
 
+#itemsDiv {
+    text-align: center;
+    margin-top: 32px;
+    display: none;
+}
+
 .tile {
+    width: 64px;
+    height: 64px;
+}
+
+.item {
     width: 64px;
     height: 64px;
 }

@@ -23,7 +23,7 @@ function renderWorld(context) {
 
             renderGroundStrip(context, y);
 
-            renderentitiestrip(context, y);
+            renderEntitieStrip(context, y);
 
             renderFrontStrip(context, y);
 
@@ -83,7 +83,7 @@ function renderGroundStrip(context, y) {
 
         if (offScreen) continue;
 
-        let hideForeground = xRay && !(chatting || showTiles) && entities[myId] !== undefined && y > Math.floor(entities[myId].currentY);
+        let hideForeground = xRay && !(chatting || scripting || showTiles) && entities[myId] !== undefined && y > Math.floor(entities[myId].currentY);
         if (hideForeground && z > 0) continue;
 
         for (let x =  Math.floor(cameraX); x <=  Math.floor(cameraX) + w/64 + 2; x++) {
@@ -133,7 +133,7 @@ function renderGroundStrip(context, y) {
 
             }
 
-            if (z === 0 && xRay && !(chatting || showTiles) && tileMap[Math.floor(x)] !== undefined && tileMap[Math.floor(x)][Math.floor(y)] !== undefined) {
+            if (z === 0 && xRay && !(chatting || scripting || showTiles) && tileMap[Math.floor(x)] !== undefined && tileMap[Math.floor(x)][Math.floor(y)] !== undefined) {
                 context.fillStyle = 'blue';
                 context.font = '10px Arial';
                 context.textAlign = 'center';
@@ -142,7 +142,7 @@ function renderGroundStrip(context, y) {
 
         }
 
-        if (z === 0 && !(chatting || showTiles)) {
+        if (z === 0 && !(chatting || scripting || showTiles)) {
 
             if (xRay) {
 
@@ -178,9 +178,9 @@ function renderGroundStrip(context, y) {
 
 }
 
-function renderentitiestrip(context, y) {
+function renderEntitieStrip(context, y) {
 
-    if (!(xRay && (chatting || showTiles)) && y < Math.floor(cameraY) + h/48 + 1) {
+    if (!(xRay && (chatting || scripting || showTiles)) && y < Math.floor(cameraY) + h/48 + 1) {
 
         for (let x = Math.floor(cameraX); x <=  Math.floor(cameraX) + w/64 + 2; x++) {
             for (let z = 0; z < 16; z++) {
@@ -195,7 +195,11 @@ function renderentitiestrip(context, y) {
                         context.drawImage(shadow, 0,0,256,256,entity.currentX*64 - cameraX*64 - 32, entity.currentY*48 - cameraY*48 - 24, 64, 48);
                         context.globalAlpha = 1;
 
-                        context.drawImage(entity.image, entity.currentX*64-32 - cameraX*64, entity.currentY*48-128 - cameraY*48);
+                        if (entity.image.height === 128) {
+                            context.drawImage(entity.image, entity.currentX*64-32 - cameraX*64, entity.currentY*48-128 - cameraY*48);
+                        } else {
+                            context.drawImage(entity.image, entity.currentX*64-32 - cameraX*64, entity.currentY*48-64 - cameraY*48);
+                        }
 
                         if (entity.chattime !== undefined && entity.chattime > worldTime) {
 
@@ -205,15 +209,22 @@ function renderentitiestrip(context, y) {
 
                             let text = entity.chat;
                             if (entity.name !== undefined) text = entity.name + ": " + text;
-                            context.fillText(text, entity.currentX*64 - cameraX*64, entity.currentY*48-128 - cameraY*48);
+                            if (entity.image.height === 128) {
+                                context.fillText(text, entity.currentX*64 - cameraX*64, entity.currentY*48-128 - cameraY*48);
+                            } else {
+                                context.fillText(text, entity.currentX*64 - cameraX*64, entity.currentY*48-64 - cameraY*48);
+                            }
 
                         } else if (entity.name !== undefined) {
 
                             context.fillStyle = 'grey';
                             context.font = '24px Arial';
                             context.textAlign = 'center';
-                            context.fillText(entity.name,
-                                entity.currentX*64 - cameraX*64, entity.currentY*48-128 - cameraY*48);
+                            if (entity.image.height === 128) {
+                                context.fillText(entity.name, entity.currentX*64 - cameraX*64, entity.currentY*48-128 - cameraY*48);
+                            } else {
+                                context.fillText(entity.name, entity.currentX*64 - cameraX*64, entity.currentY*48-64 - cameraY*48);
+                            }
 
                         }
                     }
@@ -234,7 +245,7 @@ function renderFrontStrip(context, y) {
 
             if (offScreen) continue;
 
-            let hideForeground = xRay && !(chatting || showTiles) && entities[myId] !== undefined && y > Math.floor(entities[myId].currentY);
+            let hideForeground = xRay && !(chatting || scripting || showTiles) && entities[myId] !== undefined && y > Math.floor(entities[myId].currentY);
             if (hideForeground && z > 0) continue;
 
             if (tileMap[Math.floor(x)] !== undefined && tileMap[Math.floor(x)][Math.floor(y)] !== undefined &&

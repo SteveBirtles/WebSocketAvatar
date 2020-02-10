@@ -1,6 +1,7 @@
 "use strict";
 
 const TILE_COUNT = 176;
+const ITEM_COUNT = 50;
 const AVATAR_COUNT = 43;
 const MAP_SIZE = 128;
 const TILE_SOURCE_SIZE = 64;
@@ -24,6 +25,17 @@ function pageLoad() {
     for (let i = 0; i < TILE_COUNT; i++) {
       tiles.push(document.getElementById("tile" + i));
     }
+
+    let itemsDiv = document.getElementById("itemsDiv");
+
+    let itemsHTML = '';
+
+    for (let i = 1; i <= ITEM_COUNT; i++) {
+        itemsHTML += `<img src="/client/items/item${i}.png" id="item${i}" class="item">`;
+    }
+
+    itemsDiv.innerHTML = itemsHTML;
+
 
     for (let x = 0; x <= MAP_SIZE; x++) {
       let row = [];
@@ -113,6 +125,8 @@ function joinGame() {
     window.addEventListener("keyup", event => pressedKeys[event.key] = false);
 
     document.getElementById("chattext").addEventListener("keyup", chat);
+
+    document.getElementById("newentitybutton").addEventListener("click", newEntity);
 
     const canvas = document.getElementById('avatarCanvas');
 

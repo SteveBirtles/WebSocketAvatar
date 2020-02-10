@@ -19,6 +19,21 @@ function chat(event) {
 
 }
 
+function newEntity() {
+
+    let data = {spawn: document.getElementById("spawn").value,
+                script: document.getElementById("script").value};
+    connection.send(JSON.stringify(data));
+
+    localStorage.setItem("lastSpawn", data.spawn);
+    localStorage.setItem("lastScript", data.script);
+
+    document.getElementById("newentity").style.display = "none";
+    pressedKeys = {};
+    scripting = false;
+
+}
+
 function receiveMessage(event) {
 
     //console.log("*** Procesing incoming message... ***");

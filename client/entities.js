@@ -34,7 +34,7 @@ function updateEntities() {
               }
 
         } else if (lastClientTime !== undefined) {
-        
+
             let deltaX = entity.targetX - entity.currentX;
             let deltaY = entity.targetY - entity.currentY;
             let tMinus = entity.targetT - worldTime;
@@ -89,6 +89,11 @@ function updateEntities() {
 
 function passableTile(x, y) {
 
+    for (let id of Object.keys(entities)) {
+        if (!entities[id].solid) continue;
+        if (endX === entities[id].targetX && endY === entities[id].targetY) return false;
+    }
+
     if (tileMap[x][y].length <= 1) return true;
     if (tileMap[x][y].length >= 3 && tileMap[x][y][1] === null && tileMap[x][y][2] === null) return true;
 
@@ -101,10 +106,8 @@ function calculatePath(endX, endY) {
     let nodes = [];
 
     if (endX < 1 || endY < 1 || endX > MAP_SIZE-1 || endY > MAP_SIZE-1) return [];
+
     if (!passableTile(endX, endY)) return [];
-    for (let id of Object.keys(entities)) {
-        if (endX === entities[id].targetX && endY === entities[id].targetY) return [];
-    }
 
     let adjacencies = [{x: 0, y:-1, g:10}, {x:  1, y:-1, g:14}, {x: 1, y:0, g:10}, {x: 1, y: 1, g:14},
                        {x: 0, y: 1, g:10}, {x: -1, y: 1, g:14}, {x:-1, y:0, g:10}, {x:-1, y:-1, g:14}];
@@ -143,10 +146,6 @@ function calculatePath(endX, endY) {
             if (adj.x !== 0 && adj.y !== 0) {
                 if (!passableTile(current.x, y)) continue;
                 if (!passableTile(x, current.y)) continue;
-            }
-
-            for (let id of Object.keys(entities)) {
-                if (x === entities[id].targetX && y === entities[id].targetY) continue;
             }
 
             for (let node of nodes) {

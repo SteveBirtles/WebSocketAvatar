@@ -6,7 +6,7 @@ let selectedTile = 86;
 let blockPlace = false;
 let mouseX, mouseY;
 let myPath = [];
-let chatting = false, modeChooser = false;
+let chatting = false, modeChooser = false, scripting = false;
 let xRay = false, miniMap = false, cameraMouse = false;
 let pendingTileChanges = [];
 const moveTime = 200;
@@ -28,7 +28,7 @@ function processInputs() {
     mouseX = Math.floor((mousePosition.x + cameraX*64 + 32) / 64);
     mouseY = Math.floor((mousePosition.y + cameraY*48 + 24) / 48);
 
-    if (!(chatting || showTiles || miniMap || modeChooser)) {
+    if (!(chatting || scripting || showTiles || miniMap || modeChooser)) {
 
         if (cameraMouse) {
             if (mousePosition.x < 64) { cameraX -= 0.33333; }
@@ -61,13 +61,30 @@ function processInputs() {
 
             let moved = false;
 
-            if ((pressedKeys["c"] || pressedKeys["C"]) && !(chatting || showTiles || miniMap)) {
+            if ((pressedKeys["c"] || pressedKeys["C"]) && !(chatting || scripting || showTiles || miniMap)) {
                 chatting = true;
                 document.getElementById("chat").style.display = "block";
                 document.getElementById("chattext").focus();
             }
 
-            if (!(showTiles || chatting || miniMap) && (pressedKeys["t"] || pressedKeys["T"])) {
+            if ((pressedKeys["Enter"]) && !(chatting || scripting || showTiles || miniMap)) {
+                scripting = true;
+                document.getElementById("newentity").style.display = "block";
+                document.getElementById("spawn").focus();
+
+                let lastSpawn = localStorage.getItem("lastSpawn")
+                if (lastSpawn !== undefined && lastSpawn !== null) {
+                    document.getElementById("spawn").value = lastSpawn;
+                }
+
+                let lastScript = localStorage.getItem("lastScript")
+                if (lastScript !== undefined && lastScript !== null) {
+                    document.getElementById("script").value = lastScript;                    
+                }
+
+            }
+
+            if (!(showTiles || chatting || scripting || miniMap) && (pressedKeys["t"] || pressedKeys["T"])) {
                 showTiles = true;
             }
 
@@ -98,7 +115,13 @@ function processInputs() {
                 chatting = false;
             }
 
-            if (!(chatting || showTiles)) {
+            if (scripting && pressedKeys["Escape"]) {
+                document.getElementById("newentity").style.display = "none";
+                scripting = false;
+            }
+
+
+            if (!(chatting || scripting || showTiles)) {
 
                 xRay = pressedKeys["Shift"];
                 miniMap = pressedKeys["m"];
@@ -315,30 +338,6 @@ function processInputs() {
                         if (!blockPlace) {
                           selectedTile += 1;
                           if (selectedTile >= tiles.length-1) selectedTile = 0;
-                        }
-                        blockPlace = true;
-                    } else if (pressedKeys["Enter"]) {
-                        if (!blockPlace) {
-                            let data = {
-
-                                spawn: `let a = Math.floor(Math.random()*43)+1;
-                                        setImage('avatar' + a);
-                                        setSpeed(1);`,
-
-                                script: `if (moved()) {
-                                            let position = getPosition();
-                                            if (position.x > 68 || position.x < 60) {
-                                                selfDestruct();
-                                            } else {
-                                                setStack(0,0,[50]);
-                                                let dx = Math.floor(Math.random()*3 - 1);
-                                                let dy = Math.floor(Math.random()*3 - 1);
-                                                move(dx, dy);
-                                            }
-                                        }`
-
-                            };
-                            connection.send(JSON.stringify(data));
                         }
                         blockPlace = true;
                     } else {
