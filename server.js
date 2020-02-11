@@ -9,7 +9,7 @@ const express = require('express');
 const http = require('http');
 const ws = require('ws');
 const fs = require('fs');
-const {NodeVM} = require('vm2');
+const {NodeVM, VMScript} = require('vm2');
 
 const app = express();
 const server = http.createServer(app);
@@ -45,8 +45,11 @@ if (fs.existsSync(MAP_FILE)) {
                 //console.log(entity);
 
                 try {
-                    entity.vm = newVM(id);
-                    entity.ready = true;
+                    if (entity.script !== null && entity.script !== "") {
+                        entity.vm = newVM(id);
+                        entity.compiledScript = new VMScript(entity.script);
+                        entity.ready = true;
+                    }
                     entities[id] = entity;
                  } catch (vmError) {
                      console.log(vmError.message);
@@ -105,10 +108,9 @@ server.listen(port, function(){
       for (let id of Object.keys(entities)) {
           let entity = entities[id];
 
-          if (entity.ready && entity.script !== undefined && entity.script !== null && entity.script !== "") {
+          if (entity.compiledScript !== undefined && entity.compiledScript !== null) {
               try {
-
-                   entity.vm.run(entity.script);
+                   entity.vm.run(entity.compiledScript);
                } catch (vmError) {
                    let entityUpdate = {id, error: vmError.message};
                    sendUpdate(entityUpdate, wsServer.clients);
@@ -642,7 +644,9 @@ function newVM(id) {
 function newEntity(id, x, y, script) {
 
     if (script === undefined) script = null;
-    return {x, y, script, ready:false, t: 0, chat: "", chattime: 0, moveTime: 200, flags: {}, solid: true, group: "", vm: newVM(id)};
+    let compiledScript;
+    if (script !== null) compiledScript = new VMScript(script);
+    return {x, y, script, ready:false, t: 0, chat: "", chattime: 0, moveTime: 200, flags: {}, solid: true, group: "", vm: newVM(id), compiledScript};
 
 }
 
