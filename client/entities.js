@@ -52,17 +52,14 @@ function updateEntities() {
         }
 
 
-        if (entity.image !== undefined && entity.image !== null && entity.image !== "") {
-
-          let x = Math.floor(entity.currentX);
-          let y = Math.floor(entity.currentY);
-          let dy = entity.currentY - Math.floor(entity.currentY);
-          if (dy > 0) y++;
-          if (x >= 0 && x <= MAP_SIZE && y >= 0 && y <= MAP_SIZE) {
-            entityMap[x][y].push(entity);
-          }
-
+        let x = Math.floor(entity.currentX);
+        let y = Math.floor(entity.currentY);
+        let dy = entity.currentY - Math.floor(entity.currentY);
+        if (dy > 0) y++;
+        if (x >= 0 && x <= MAP_SIZE && y >= 0 && y <= MAP_SIZE) {
+          entityMap[x][y].push(entity);
         }
+
 
     }
 
@@ -133,6 +130,8 @@ function calculatePath(endX, endY) {
                 current = node;
             }
         }
+
+        if (current === undefined) return [];
 
         adjs:
         for (let adj of adjacencies) {

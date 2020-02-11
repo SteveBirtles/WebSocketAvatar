@@ -145,8 +145,7 @@ function drawControls(context) {
       context.font = '18px Arial';
       context.fillText("Arrow keys - Move", w-10, s); s += 20;
       context.fillText("Left Click - Path Move", w-10, s); s += 20;
-      context.fillText("C - Chat (Escape to cancel)", w-10, s); s += 20;
-      context.fillText("Enter - Place sign (Escape to cancel)", w-10, s); s += 30;
+      context.fillText("C - Chat (Escape to cancel)", w-10, s); s += 30;
 
       context.fillText("Right Click - Place block (limited range)", w-10, s); s += 20;
       context.fillText("WSAD - Place blocks adjacent", w-10, s); s += 20;
@@ -161,6 +160,7 @@ function drawControls(context) {
       context.fillText("Escape - Normal mode", w-10, s); s += 20;
       context.fillText("Middle click or \\ (Hold) & Mouse - Mode chooser", w-10, s); s += 30;
 
+      context.fillText("Enter - New entity (Escape to cancel)", w-10, s); s += 20;
       context.fillText("Backspace - Select nearest entity", w-10, s); s += 20;
       context.fillText("Y - Delete selected entity (if allowed)", w-10, s); s += 30;
 

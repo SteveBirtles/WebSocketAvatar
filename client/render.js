@@ -189,8 +189,6 @@ function renderEntityStrip(context, y) {
 
                     for (let entity of entityMap[Math.floor(x)][Math.floor(y)]) {
 
-                        if (entity.currentY*48-128 - cameraY*48 > h) continue;
-
                         if (entityToDelete === entity) {
 
                             context.fillStyle = 'red';
@@ -199,6 +197,8 @@ function renderEntityStrip(context, y) {
                             context.fill();
 
                         }
+
+                        if (entity.currentY*48-128 - cameraY*48 > h) continue;
 
                         if (xRay) {
 
@@ -211,7 +211,7 @@ function renderEntityStrip(context, y) {
                             context.ellipse(entity.currentX*64 - cameraX*64, entity.currentY*48 - cameraY*48, 32, 24, 0, 0, 2*Math.PI);
                             context.fill();
 
-                        } else {
+                        } else if (entity.image !== undefined && entity.image !== null) {
 
                             context.globalAlpha = 0.25;
                             context.drawImage(shadow, 0,0,256,256,entity.currentX*64 - cameraX*64 - 32, entity.currentY*48 - cameraY*48 - 24, 64, 48);
@@ -230,7 +230,7 @@ function renderEntityStrip(context, y) {
                             context.font = 'bold 24px Arial';
                             context.textAlign = 'center';
 
-                            if (entity.image.height === 128) {
+                            if (entity.image !== undefined && entity.image !== null && entity.image.height === 128) {
                                 context.fillText(entity.error, entity.currentX*64 - cameraX*64, entity.currentY*48-128 - cameraY*48);
                             } else {
                                 context.fillText(entity.error, entity.currentX*64 - cameraX*64, entity.currentY*48-64 - cameraY*48);
@@ -244,7 +244,7 @@ function renderEntityStrip(context, y) {
 
                             let text = entity.chat;
                             if (entity.name !== undefined) text = entity.name + ": " + text;
-                            if (entity.image.height === 128) {
+                            if (entity.image !== undefined && entity.image !== null && entity.image.height === 128) {
                                 context.fillText(text, entity.currentX*64 - cameraX*64, entity.currentY*48-128 - cameraY*48);
                             } else {
                                 context.fillText(text, entity.currentX*64 - cameraX*64, entity.currentY*48-64 - cameraY*48);
@@ -255,7 +255,7 @@ function renderEntityStrip(context, y) {
                             context.fillStyle = 'grey';
                             context.font = '24px Arial';
                             context.textAlign = 'center';
-                            if (entity.image.height === 128) {
+                            if (entity.image !== undefined && entity.image !== null && entity.image.height === 128) {
                                 context.fillText(entity.name, entity.currentX*64 - cameraX*64, entity.currentY*48-128 - cameraY*48);
                             } else {
                                 context.fillText(entity.name, entity.currentX*64 - cameraX*64, entity.currentY*48-64 - cameraY*48);

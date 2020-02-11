@@ -127,6 +127,13 @@ function joinGame() {
 
     document.getElementById("chattext").addEventListener("keyup", chat);
 
+    document.getElementById("spawn").addEventListener("keyup", event => {
+        if (event.key == "Enter" && pressedKeys["Control"]) newEntity();
+    });
+    document.getElementById("script").addEventListener("keyup", event => {
+        if (event.key == "Enter" && pressedKeys["Control"]) newEntity();
+    });
+
     document.getElementById("newentitybutton").addEventListener("click", newEntity);
 
     const canvas = document.getElementById('avatarCanvas');
@@ -172,7 +179,7 @@ function joinGame() {
     let recentScriptsJSON = localStorage.getItem("recentScripts");
     if (recentScriptsJSON !== undefined && recentScriptsJSON !== null) {
         recentScripts = JSON.parse(recentScriptsJSON);
-    }    
+    }
 
     console.log("*** Requesting animation frame... ***");
     window.requestAnimationFrame(gameFrame);

@@ -29,8 +29,37 @@ if (fs.existsSync(MAP_FILE)) {
 
     fs.readFile('map.json', 'utf8', function(err, raw) {
         if (err) throw err;
-        tileMap = JSON.parse(raw);
-    })
+        let rawData = JSON.parse(raw);
+        if (Array.isArray(rawData)) tileMap = rawData; //Compatibility
+        if (rawData.hasOwnProperty("tileMap")) tileMap = rawData.tileMap;
+        if (rawData.hasOwnProperty("entities")) {
+            rawEntities = rawData.entities;
+
+            let id = 0;
+
+            for (let entity of rawEntities) {
+
+                id++;
+                entity.t = 0;
+                entity.chat = "";
+                entity.chattime = 0;
+                console.log(entity);
+
+                try {
+                    entity.vm = newVM(id);
+                    entity.ready = true;
+                    entities[id] = entity;
+                 } catch (vmError) {
+                     console.log(vmError.message);
+                 }
+
+            }
+
+            entityCount = id;
+
+        }
+
+    });
 
 } else {
 
@@ -43,9 +72,10 @@ if (fs.existsSync(MAP_FILE)) {
       }
       tileMap.push(row);
     }
-    fs.writeFile('map.json', JSON.stringify(tileMap), function(err) {
+    fs.writeFile('map.json', JSON.stringify({entities: [], tileMap}), function(err) {
         if (err) throw err;
     });
+
 }
 
 const port = 8081;
@@ -77,8 +107,8 @@ server.listen(port, function(){
 
           if (entity.ready && entity.script !== undefined && entity.script !== null && entity.script !== "") {
               try {
-                  //console.log(">>> RUNNING: " + entity.script);
-                   entities[entity.id].vm.run(entity.script);
+
+                   entity.vm.run(entity.script);
                } catch (vmError) {
                    let entityUpdate = {id, error: vmError.message};
                    sendUpdate(entityUpdate, wsServer.clients);
@@ -94,7 +124,32 @@ server.listen(port, function(){
 
       console.log("*** SAVING MAP (" + (Date.now() - serverStartTime) + ") ***");
 
-      fs.writeFile('map.json', JSON.stringify(tileMap), function(err) {
+      let sanitisedEntities = [];
+
+      entityLoop:
+      for (let id of Object.keys(entities)) {
+
+          for (let c of wsServer.clients) {
+              if (String(c.id) === id) continue entityLoop;
+          }
+
+          let entity = entities[id];
+          sanitisedEntities.push({
+              x: entity.x,
+              y: entity.y,
+              image: entity.image,
+              name: entity.name,
+              script: entity.script,
+              spawn: entity.spawn,
+              moveTime: entity.moveTime,
+              flags: entity.flags,
+              solid: entity.solid,
+              group: entity.group
+          });
+
+      }
+
+      fs.writeFile('map.json', JSON.stringify({entities: sanitisedEntities, tileMap}), function(err) {
           if (err) throw err;
       });
 
@@ -158,6 +213,7 @@ wsServer.on('connection', client => {
               sendUpdate(n, wsServer.clients);
 
               if (data.spawn !== "") {
+                  entities[n.id].spawn = data.spawn;
                   try {
                       //console.log(">>> SPAWNING: " + data.spawn);
                       entities[n.id].vm.run(data.spawn);
@@ -166,6 +222,8 @@ wsServer.on('connection', client => {
                        let entityUpdate = {id: n.id, error: vmError.message};
                        sendUpdate(entityUpdate, wsServer.clients);
                    }
+               } else {
+                   entities[n.id].spawn = null;
                }
 
           } else if (data.hasOwnProperty("delete")) {
@@ -279,7 +337,7 @@ wsServer.on('connection', client => {
 
               if (entities[client.id].solid) {
                   for (let id of Object.keys(entities)) {
-                      if (id === String(client.id)) continue;
+                      if (id === String(client.id) || !entities[id].solid) continue;
                       if (entities[id].x === entities[client.id].x && entities[id].y === entities[client.id].y) reset = true;
                   }
               }
@@ -367,215 +425,215 @@ function sendTileStack(x, y, stack, clients) {
     }
 }
 
+function newVM(id) {
+
+    return new NodeVM({sandbox: {
+
+        getPosition: function() {
+            return {
+                x: entities[id].x,
+                y: entities[id].y
+            };
+        },
+
+        move: function(dx, dy) {
+            if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1) {
+
+              let u = entities[id].x + dx;
+              let v = entities[id].y + dy;
+
+              if (u < 1 || v < 1 || u > MAP_SIZE-1 || v > MAP_SIZE-1) return;
+              if (!passableTile(u, v)) return;
+
+              entities[id].x = u;
+              entities[id].y = v;
+
+              entities[id].t = Date.now() - serverStartTime + entities[id].moveTime;
+              sendUpdate({id, x: entities[id].x, y: entities[id].y, t: entities[id].t}, wsServer.clients);
+
+            }
+        },
+
+        getPath: function(targetX, targetY) {
+            return calculatePath(entities[id].x, entities[id].y, targetX, targetY);
+        },
+
+        moved: function() {
+            return (entities[id].t < Date.now() - serverStartTime);
+        },
+
+        getSpeed: function() {
+            return 1000 / entities[id].moveTime;
+        },
+
+        setSpeed: function(speed) {
+            if (speed < 0.1) speed = 0.1;
+            if (speed > 10) speed = 10;
+            entities[id].moveTime = 1000 / speed;
+        },
+
+        listNearby: function(radius) {
+
+            let list = [];
+            let u = entities[id].x;
+            let v = entities[id].y;
+            for (let i of Object.keys(entities)) {
+                if (i === String(id)) continue;
+                let e = entities[i];
+                let d = Math.sqrt(Math.pow(u - e.x, 2) + Math.pow(v - e.y, 2));
+                if (d <= radius) {
+                    list.push({
+                      x: e.x,
+                      y: e.y,
+                      name: e.name,
+                      group: e.group,
+                      image: e.image,
+                      solid: e.solid,
+                      speed: e.speed
+                    });
+                }
+            }
+            return list;
+
+        },
+
+        worldTime: function() {
+            return Date.now() - serverStartTime;
+        },
+
+        setImage: function(image) {
+            entities[id].image = image;
+            sendUpdate({id, image}, wsServer.clients);
+        },
+
+        getImage: function() {
+            return entities[id].image;
+        },
+
+        getFlag: function(flag) {
+            return entities[id].flags[flag];
+        },
+
+        setFlag: function(flag, value) {
+            entities[id].flags[flag] = value;
+        },
+
+        getStack: function(dx, dy) {
+
+            if (dx >= -2 && dy >= -2 && dx <= 2 && dy <= 2) {
+                let u = entities[id].x + dx;
+                let v = entities[id].y + dy;
+                if (u >= 0 && v >= 0 && u <= MAP_SIZE && v <= MAP_SIZE) {
+                    return tileMap[u][v];
+                }
+            }
+
+        },
+
+        setStack: function(dx, dy, stack) {
+
+            if (!Array.isArray(stack)) throw "Stack is not a valid array";
+
+            if (stack.length > 12) throw "Stack is too long";
+            for (let t of stack) {
+                if (t === null) continue;
+                if (typeof t === 'number') continue;
+                throw "Stack entry is not null or a number";
+            }
+
+            if (dx >= -2 && dy >= -2 && dx <= 2 && dy <= 2) {
+                let u = entities[id].x + dx;
+                let v = entities[id].y + dy;
+                if (u >= 0 && v >= 0 && u <= MAP_SIZE && v <= MAP_SIZE) {
+                    tileMap[u][v] = stack;
+                    sendTileStack(u, v, tileMap[u][v], wsServer.clients);
+                }
+            }
+
+        },
+
+        setSolid: function(solid) {
+            if (solid !== true && solid !== false) return;
+            entities[id].solid = solid;
+            sendUpdate({id, solid}, wsServer.clients);
+        },
+
+        setGroup: function(group) {
+            if (groupFlags[group] === undefined) groupFlags[group] = {};
+            entities[id].group = group;
+        },
+
+        getGroup: function() {
+            return entities[id].group;
+        },
+
+        getGroupFlag: function(flag) {
+            if (entities[id].group === undefined || entities[id].group === "") {
+                return undefined;
+            } else if (groupFlags[entities[id].group] === undefined) {
+                return undefined;
+            } else {
+                return groupFlags[entities[id].group][flag];
+            }
+        },
+
+        setGroupFlag: function(flag, value) {
+            if (groupFlags[entities[id].group] !== undefined) {
+                groupFlags[entities[id].group][flag] = value;
+            }
+        },
+
+        say: function(text) {
+            entities[id].chat = text;
+            entities[id].chattime = (Date.now() - serverStartTime) + chatLifespan;
+            sendUpdate({id, chat: entities[id].chat, chattime: entities[id].chattime}, wsServer.clients);
+        },
+
+        spawn: function(dx, dy, s0, s) {
+          if (dx >= -2 && dy >= -2 && dx <= 2 && dy <= 2) {
+              let u = entities[id].x + dx;
+              let v = entities[id].y + dy;
+              if (u >= 0 && v >= 0 && u <= MAP_SIZE && v <= MAP_SIZE) {
+
+                entityCount++;
+                let n = {id: entityCount, x: u, y: v, solid: true};
+                entities[n.id] = newEntity(n.id, n.x, n.y, s);
+
+                sendUpdate(n, wsServer.clients);
+
+                if (s0 !== "") {
+                    try {
+                        entities[n.id].spawn = s0;
+                        entities[n.id].vm.run(s0);
+                        entities[n.id].ready = true;
+                     } catch (vmError) {
+                         let entityUpdate = {id: n.id, error: vmError.message};
+                         sendUpdate(entityUpdate, wsServer.clients);
+                     }
+                 } else {
+                     entities[n.id].spawn = null;
+                 }
+
+              }
+            }
+        },
+
+        selfDestruct: function() {
+            let deleteData = {delete: id};
+            for (let c of wsServer.clients) {
+                c.send(JSON.stringify(deleteData));
+            }
+            delete entities[id];
+        }
+
+    }});
+
+}
+
 function newEntity(id, x, y, script) {
 
     if (script === undefined) script = null;
-
-    return {
-
-        id, x, y, script, ready:false,
-
-        t: 0, chat: "", chattime: 0, moveTime: 200, flags: {}, solid: true, group: "",
-
-        vm: new NodeVM({sandbox: {
-
-            getPosition: function() {
-                return {
-                    x: entities[id].x,
-                    y: entities[id].y
-                };
-            },
-
-            move: function(dx, dy) {
-                if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1) {
-
-                  let u = entities[id].x + dx;
-                  let v = entities[id].y + dy;
-
-                  if (u < 1 || v < 1 || u > MAP_SIZE-1 || v > MAP_SIZE-1) return;
-                  if (!passableTile(u, v)) return;
-
-                  entities[id].x = u;
-                  entities[id].y = v;
-
-                  entities[id].t = Date.now() - serverStartTime + entities[id].moveTime;
-                  sendUpdate({id, x: entities[id].x, y: entities[id].y, t: entities[id].t}, wsServer.clients);
-
-                }
-            },
-
-            getPath: function(targetX, targetY) {
-                return calculatePath(entities[id].x, entities[id].y, targetX, targetY);
-            },
-
-            moved: function() {
-                return (entities[id].t < Date.now() - serverStartTime);
-            },
-
-            getSpeed: function() {
-                return 1000 / entities[id].moveTime;
-            },
-
-            setSpeed: function(speed) {
-                if (speed < 0.1) speed = 0.1;
-                if (speed > 10) speed = 10;
-                entities[id].moveTime = 1000 / speed;
-            },
-
-            listNearby: function(radius) {
-
-                let list = [];
-                let u = entities[id].x;
-                let v = entities[id].y;
-                for (let i of Object.keys(entities)) {
-                    if (i === String(id)) continue;
-                    let e = entities[i];
-                    let d = Math.sqrt(Math.pow(u - e.x, 2) + Math.pow(v - e.y, 2));
-                    if (d <= radius) {
-                        list.push({
-                          id: i,
-                          x: e.x,
-                          y: e.y,
-                          speed: e.speed,
-                          name: e.name,
-                          group: e.group,
-                          image: e.image,
-                          solid: e.solid
-                        });
-                    }
-                }
-                return list;
-
-            },
-
-            worldTime: function() {
-                return Date.now() - serverStartTime;
-            },
-
-            setImage: function(image) {
-                entities[id].image = image;
-                sendUpdate({id, image}, wsServer.clients);
-            },
-
-            getImage: function() {
-                return entities[id].image;
-            },
-
-            getFlag: function(flag) {
-                return entities[id].flags[flag];
-            },
-
-            setFlag: function(flag, value) {
-                entities[id].flags[flag] = value;
-            },
-
-            getStack: function(dx, dy) {
-
-                if (dx >= -2 && dy >= -2 && dx <= 2 && dy <= 2) {
-                    let u = entities[id].x + dx;
-                    let v = entities[id].y + dy;
-                    if (u >= 0 && v >= 0 && u <= MAP_SIZE && v <= MAP_SIZE) {
-                        return tileMap[u][v];
-                    }
-                }
-
-            },
-
-            setStack: function(dx, dy, stack) {
-
-                if (!Array.isArray(stack)) throw "Stack is not a valid array";
-
-                if (stack.length > 12) throw "Stack is too long";
-                for (let t of stack) {
-                    if (t === null) continue;
-                    if (typeof t === 'number') continue;
-                    throw "Stack entry is not null or a number";
-                }
-
-                if (dx >= -2 && dy >= -2 && dx <= 2 && dy <= 2) {
-                    let u = entities[id].x + dx;
-                    let v = entities[id].y + dy;
-                    if (u >= 0 && v >= 0 && u <= MAP_SIZE && v <= MAP_SIZE) {
-                        tileMap[u][v] = stack;
-                        sendTileStack(u, v, tileMap[u][v], wsServer.clients);
-                    }
-                }
-
-            },
-
-            setSolid: function(solid) {
-                if (solid !== true && solid !== false) return;
-                entities[id].solid = solid;
-            },
-
-            setGroup: function(group) {
-                if (groupFlags[group] === undefined) groupFlags[group] = {};
-                entities[id].group = group;
-            },
-
-            getGroup: function() {
-                return entities[id].group;
-            },
-
-            getGroupFlag: function(flag) {
-                if (entities[id].group === undefined || entities[id].group === "") {
-                    return undefined;
-                } else if (groupFlags[entities[id].group] === undefined) {
-                    return undefined;
-                } else {
-                    return groupFlags[entities[id].group][flag];
-                }
-            },
-
-            setGroupFlag: function(flag, value) {
-                if (groupFlags[entities[id].group] !== undefined) {
-                    groupFlags[entities[id].group][flag] = value;
-                }
-            },
-
-            say: function(text) {
-                entities[id].chat = text;
-                entities[id].chattime = (Date.now() - serverStartTime) + chatLifespan;
-                sendUpdate({id, chat: entities[id].chat, chattime: entities[id].chattime}, wsServer.clients);
-            },
-
-            spawn: function(dx, dy, s0, s) {
-              if (dx >= -2 && dy >= -2 && dx <= 2 && dy <= 2) {
-                  let u = entities[id].x + dx;
-                  let v = entities[id].y + dy;
-                  if (u >= 0 && v >= 0 && u <= MAP_SIZE && v <= MAP_SIZE) {
-
-                    entityCount++;
-                    let n = {id: entityCount, x: u, y: v, solid: true};
-                    entities[n.id] = newEntity(n.id, n.x, n.y, s);
-
-                    sendUpdate(n, wsServer.clients);
-
-                    if (s0 !== "") {
-                        try {
-                            entities[n.id].vm.run(s0);
-                            entities[n.id].ready = true;
-                         } catch (vmError) {
-                             let entityUpdate = {id: n.id, error: vmError.message};
-                             sendUpdate(entityUpdate, wsServer.clients);
-                         }
-                     }
-
-                  }
-                }
-            },
-
-            selfDestruct: function() {
-                let deleteData = {delete: id};
-                for (let c of wsServer.clients) {
-                    c.send(JSON.stringify(deleteData));
-                }
-                delete entities[id];
-            }
-
-        }})
-
-    };
+    return {x, y, script, ready:false, t: 0, chat: "", chattime: 0, moveTime: 200, flags: {}, solid: true, group: "", vm: newVM(id)};
 
 }
 
@@ -621,6 +679,8 @@ function calculatePath(startX, startY, endX, endY) {
                 current = node;
             }
         }
+
+        if (current === undefined) return [];
 
         adjs:
         for (let adj of adjacencies) {
