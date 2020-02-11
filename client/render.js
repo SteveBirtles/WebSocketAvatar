@@ -6,7 +6,14 @@ let tileMap = [];
 
 function renderWorld(context) {
 
-    if (entities[myId] === undefined || entities[myId].image === undefined) {
+    if (connectionError !== null) {
+
+        context.fillStyle = 'red';
+        context.font = '36px Arial';
+        context.textAlign = 'center';
+        context.fillText(connectionError, w/2, h/2);
+
+    } else if (entities[myId] === undefined || entities[myId].image === undefined) {
 
         context.fillStyle = 'white';
         context.font = '36px Arial';

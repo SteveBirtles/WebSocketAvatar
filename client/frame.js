@@ -27,9 +27,10 @@ function gameFrame(frameTime) {
 
     startFrame(frameTime);
 
-    processInputs();
-
-    updateEntities();
+    if (connectionError === null) {
+        processInputs();
+        updateEntities();
+    }
 
     let canvas = document.getElementById("avatarCanvas");
     let context = canvas.getContext("2d");
@@ -38,7 +39,7 @@ function gameFrame(frameTime) {
 
     renderWorld(context);
 
-    if (!(showTiles || chatting || miniMap || modeChooser)) drawCurrentTile(context);
+    if (!(showTiles || chatting || miniMap || modeChooser) && connectionError === null) drawCurrentTile(context);
 
     if (showTiles) drawTiles(context);
 

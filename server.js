@@ -321,24 +321,28 @@ wsServer.on('connection', client => {
                   entityUpdate.t = t;
               }
 
-              if (entities[client.id].x < 1 ||
-                  entities[client.id].x > MAP_SIZE-1 ||
-                  entities[client.id].y < 1 ||
-                  entities[client.id].y > MAP_SIZE-1) reset = true;
+              let u = entities[client.id].x;
+              let v = entities[client.id].y;
 
-              if (entities[client.id].solid &&
-                  tileMap[entities[client.id].x][entities[client.id].y].length > 1 && !(
-                  tileMap[entities[client.id].x][entities[client.id].y].length >= 3 &&
-                  tileMap[entities[client.id].x][entities[client.id].y][1] === null &&
-                  tileMap[entities[client.id].x][entities[client.id].y][2] === null)) reset = true;
+              if (u < 1 || u > MAP_SIZE-1 || v < 1 || v > MAP_SIZE-1) reset = true;
 
-              let d = Math.sqrt(Math.pow(lastX - entities[client.id].x, 2) + Math.pow(lastY - entities[client.id].y, 2));
+              if (entities[client.id].solid) {
+                  if (tileMap[u][v].length > 1 && !(
+                      tileMap[u][v].length >= 3 &&
+                      tileMap[u][v][1] === null &&
+                      tileMap[u][v][2] === null)) reset = true;
+                  if (u !== lastX && !passableTile(lastX, v, client.id)) reset = true;
+                  if (v !== lastY && !passableTile(u, lastY, client.id)) reset = true;
+                  if (!passableTile(u, v, client.id)) reset = true;
+              }
+
+              let d = Math.sqrt(Math.pow(lastX - u, 2) + Math.pow(lastY - v, 2));
               if (d >= 2) reset = true;
 
               if (entities[client.id].solid) {
                   for (let id of Object.keys(entities)) {
                       if (id === String(client.id) || !entities[id].solid) continue;
-                      if (entities[id].x === entities[client.id].x && entities[id].y === entities[client.id].y) reset = true;
+                      if (entities[id].x === u && entities[id].y === v) reset = true;
                   }
               }
 
@@ -443,7 +447,9 @@ function newVM(id) {
               let v = entities[id].y + dy;
 
               if (u < 1 || v < 1 || u > MAP_SIZE-1 || v > MAP_SIZE-1) return;
-              if (!passableTile(u, v)) return;
+              if (u !== entities[id].x && !passableTile(entities[id].x, v, id)) return;
+              if (v !== entities[id].y && !passableTile(u, entities[id].y, id)) return;
+              if (!passableTile(u, v, id)) return;
 
               entities[id].x = u;
               entities[id].y = v;
@@ -640,11 +646,12 @@ function newEntity(id, x, y, script) {
 
 }
 
-function passableTile(x, y) {
+function passableTile(x, y, i) {
 
     for (let id of Object.keys(entities)) {
+        if (String(i) === id) continue;
         if (!entities[id].solid) continue;
-        if (x === entities[id].targetX && y === entities[id].targetY) return false;
+        if (x === entities[id].x && y === entities[id].y) return false;
     }
 
     if (tileMap[x][y].length <= 1) return true;
@@ -654,12 +661,12 @@ function passableTile(x, y) {
 
 }
 
-function calculatePath(startX, startY, endX, endY) {
+function calculatePath(startX, startY, endX, endY, id) {
 
     let nodes = [];
 
     if (endX < 1 || endY < 1 || endX > MAP_SIZE-1 || endY > MAP_SIZE-1) return [];
-    if (!passableTile(endX, endY)) return [];
+    if (!passableTile(endX, endY, id)) return [];
 
     let adjacencies = [{x: 0, y:-1, g:10}, {x:  1, y:-1, g:14}, {x: 1, y:0, g:10}, {x: 1, y: 1, g:14},
                        {x: 0, y: 1, g:10}, {x: -1, y: 1, g:14}, {x:-1, y:0, g:10}, {x:-1, y:-1, g:14}];
@@ -693,10 +700,10 @@ function calculatePath(startX, startY, endX, endY) {
 
             if (x < 1 || y < 1 || x > MAP_SIZE-1 || y > MAP_SIZE-1) continue;
 
-            if (!passableTile(x, y)) continue;
+            if (!passableTile(x, y, id)) continue;
             if (adj.x !== 0 && adj.y !== 0) {
-                if (!passableTile(current.x, y)) continue;
-                if (!passableTile(x, current.y)) continue;
+                if (!passableTile(current.x, y, id)) continue;
+                if (!passableTile(x, current.y, id)) continue;
             }
 
             for (let node of nodes) {

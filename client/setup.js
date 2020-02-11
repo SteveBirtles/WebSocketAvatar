@@ -8,6 +8,7 @@ const TILE_SOURCE_SIZE = 64;
 
 let selectedAvatar;
 let recentScripts = [];
+let connectionError = null;
 
 function pageLoad() {
 
@@ -119,8 +120,22 @@ function joinGame() {
     connection = new WebSocket(protocol + '//' + host + ':' + port);
 
     connection.addEventListener('message', receiveMessage);
-    connection.addEventListener('error', () => alert("There was an error connecting to the server."));
-    connection.addEventListener('close', () => alert("Connection to the server was lost."));
+    connection.addEventListener('error', () => {
+        connectionError = "There was an error connecting to the server.";
+        showControls = false;
+        showTiles = false;
+        chatting = false;
+        scripting = false;
+        miniMap = false;
+    });
+    connection.addEventListener('close', () => {
+        connectionError = "Connection to the server was lost.";
+        showControls = false;
+        showTiles = false;
+        chatting = false;
+        scripting = false;
+        miniMap = false;
+    });
 
     window.addEventListener("keydown", event => pressedKeys[event.key] = true);
     window.addEventListener("keyup", event => pressedKeys[event.key] = false);
