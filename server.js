@@ -3,6 +3,7 @@ const MAP_FILE = "map.json";
 const BASE_TILE = 0;
 const CHAT_LIFE = 5000;
 const MAX_PATH_LENGTH = 1000;
+const DEBUG = false;
 
 const express = require('express');
 const http = require('http');
@@ -41,7 +42,7 @@ if (fs.existsSync(MAP_FILE)) {
                 entity.t = 0;
                 entity.chat = "";
                 entity.chattime = 0;
-                console.log(entity);
+                //console.log(entity);
 
                 try {
                     entity.vm = newVM(id);
@@ -56,6 +57,7 @@ if (fs.existsSync(MAP_FILE)) {
             entityCount = id;
 
         }
+        if (rawData.hasOwnProperty("groupFlags")) groupFlags = rawData.groupFlags;
 
     });
 
@@ -70,7 +72,7 @@ if (fs.existsSync(MAP_FILE)) {
       }
       tileMap.push(row);
     }
-    fs.writeFile('map.json', JSON.stringify({entities: [], tileMap}), function(err) {
+    fs.writeFile('map.json', JSON.stringify({entities: [], groupFlags, tileMap}), function(err) {
         if (err) throw err;
     });
 
@@ -147,7 +149,7 @@ server.listen(port, function(){
 
       }
 
-      fs.writeFile('map.json', JSON.stringify({entities: sanitisedEntities, tileMap}), function(err) {
+      fs.writeFile('map.json', JSON.stringify({entities: sanitisedEntities, groupFlags, tileMap}), function(err) {
           if (err) throw err;
       });
 
@@ -200,7 +202,7 @@ wsServer.on('connection', client => {
 
           let data = JSON.parse(message);
 
-          console.log(client.id + " --> " + message);
+          if (DEBUG) console.log(client.id + " --> " + message);
 
           if (data.hasOwnProperty("spawn")) {
 
@@ -479,11 +481,12 @@ function newVM(id) {
                 if (i === String(id)) continue;
                 let e = entities[i];
                 let d = Math.sqrt(Math.pow(u - e.x, 2) + Math.pow(v - e.y, 2));
-                if (d <= radius) {
+                if (d <= radius && d <= 12) {
                     list.push({
                       x: e.x,
                       y: e.y,
                       name: e.name,
+                      chat: e.chat,
                       group: e.group,
                       image: e.image,
                       solid: e.solid,
@@ -582,9 +585,11 @@ function newVM(id) {
         },
 
         say: function(text) {
-            entities[id].chat = text;
-            entities[id].chattime = (Date.now() - serverStartTime) + CHAT_LIFE;
-            sendUpdate({id, chat: entities[id].chat, chattime: entities[id].chattime}, wsServer.clients);
+            if (text !== entities[id].chat || entities[id].chattime < (Date.now() - serverStartTime) + 100) {
+                entities[id].chat = text;
+                entities[id].chattime = (Date.now() - serverStartTime) + CHAT_LIFE;
+                sendUpdate({id, chat: entities[id].chat, chattime: entities[id].chattime}, wsServer.clients);
+            }
         },
 
         spawn: function(dx, dy, s0, s) {

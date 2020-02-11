@@ -386,8 +386,8 @@ function processInputs() {
 
                             for (let id of Object.keys(entities)) {
                                 if (id === String(myId)) continue;
-                                let d = Math.pow(entities[myId].targetX - entities[id].targetX, 2) + Math.pow(entities[myId].targetY - entities[id].targetY, 2);
-                                if (d < bestD) {
+                                let d = Math.sqrt(Math.pow(entities[myId].targetX - entities[id].targetX, 2) + Math.pow(entities[myId].targetY - entities[id].targetY, 2));
+                                if (d < bestD && d <= 12) {
                                     bestE = id;
                                     bestD = d;
                                 }

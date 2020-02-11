@@ -90,7 +90,7 @@ function receiveMessage(event) {
 
         if (data.hasOwnProperty("name")) entities[data.id].name = data.name;
 
-        console.log(event.data);
+        //console.log(event.data);
 
     }
 

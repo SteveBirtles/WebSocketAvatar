@@ -99,34 +99,32 @@ function drawControls(context) {
 
       context.fillStyle = 'cyan';
       context.font = '20px monospace';
-      context.fillText("getPosition()		                              // returns {x, y}", 875, s); s += 30;
-      context.fillText("move(dx, dy)		                               // dx and dy are -1, 0 or +1", 875, s); s += 40;
+      context.fillText("getPosition()		          // returns {x, y}", 875, s); s += 30;
+      context.fillText("move(dx, dy)		           // dx and dy are -1, 0 or +1", 875, s); s += 40;
 
-      context.fillText("moved()			                                   // Returns true if last move has completed", 875, s); s += 40;
+      context.fillText("moved()			               // Returns true if last move has completed", 875, s); s += 40;
 
       context.fillText("getSpeed()", 875, s); s += 30;
-      context.fillText("setSpeed(speed)                              // 0.1 up to 10", 875, s); s += 40;
+      context.fillText("setSpeed(speed)          // 0.1 up to 10", 875, s); s += 30;
+      context.fillText("setSolid(solidity)		     // true or false", 875, s); s += 40;
 
-      context.fillText("getPath(x, y)                                // Returns a list of {x, y}", 875, s); s += 40;
+      context.fillText("getPath(x, y)            // Returns a list of {x, y}", 875, s); s += 30;
+      context.fillText("worldTime()", 875, s); s += 30;
+      context.fillText("listNearby(radius)	      // Returns a list of entities (max radius 12):", 875, s); s += 30;
+      context.fillText("                         // {x, y, name, chat, group, image, solid, speed}, ", 875, s); s += 40;
 
-      context.fillText("listNearby(radius)	                          // Returns a list of entities", 875, s); s += 30;
-      context.fillText("worldTime()", 875, s); s += 40;
+      context.fillText("getImage()	              // image's CSS id", 875, s); s += 30;
+      context.fillText("setImage(image)", 875, s); s += 40;
 
-      context.fillText("setImage(image)	                             // image's CSS id", 875, s); s += 30;
-      context.fillText("getImage()", 875, s); s += 40;
+      context.fillText("getStack(dx, dy)			      // dx and dy are -2, -1, 0, +1, +2", 875, s); s += 30;
+      context.fillText("setStack(dx, dy, stack)  // Stack must be a list of numbers and/or nulls", 875, s); s += 40;
 
-      context.fillText("getFlag(flag)", 875, s); s += 30;
+      context.fillText("getFlag(flag)            // Flags are private variables for each entity", 875, s); s += 30;
       context.fillText("setFlag(flag, value)", 875, s); s += 40;
 
-      context.fillText("getStack(dx, dy)			                          // dx and dy are -2, -1, 0, +1, +2", 875, s); s += 30;
-      context.fillText("setStack(dx, dy, stack)                      // Stack must be a list of numbers and/or nulls", 875, s); s += 40;
-
-      context.fillText("setSolid(solidity)		                         // true or false", 875, s); s += 40;
-
-      context.fillText("setGroup(group)", 875, s); s += 30;
-      context.fillText("getGroup()", 875, s); s += 40;
-
-      context.fillText("getGroupFlag(flag)", 875, s); s += 30;
+      context.fillText("getGroup()               // Groups give access to shared flags", 875, s); s += 30;
+      context.fillText("setGroup(group)          // New groups are automtically created", 875, s); s += 30;
+      context.fillText("getGroupFlag(flag)       // A flag that hasn't been set will equal undefined", 875, s); s += 30;
       context.fillText("setGroupFlag(flag, value)", 875, s); s += 40;
 
       context.fillText("say(text)", 875, s); s += 40;
@@ -161,7 +159,7 @@ function drawControls(context) {
       context.fillText("Middle click or \\ (Hold) & Mouse - Mode chooser", w-10, s); s += 30;
 
       context.fillText("Enter - New entity (Escape to cancel)", w-10, s); s += 20;
-      context.fillText("Backspace - Select nearest entity", w-10, s); s += 20;
+      context.fillText("Backspace - Select nearest entity (max distance 12)", w-10, s); s += 20;
       context.fillText("Y - Delete selected entity (if allowed)", w-10, s); s += 30;
 
       context.fillText("T (Hold) & Mouse or PageUp / PageDown - Select block tile", w-10, s); s += 20;

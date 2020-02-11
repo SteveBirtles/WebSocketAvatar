@@ -180,7 +180,7 @@ function renderGroundStrip(context, y) {
 
 function renderEntityStrip(context, y) {
 
-    if (!(xRay && (chatting || scripting || showTiles)) && y < Math.floor(cameraY) + h/48 + 1) {
+    if (!(xRay && (chatting || scripting || showTiles)) && y < Math.floor(cameraY) + h/48 + 4) {
 
         for (let x = Math.floor(cameraX); x <=  Math.floor(cameraX) + w/64 + 2; x++) {
             for (let z = 0; z < 16; z++) {
