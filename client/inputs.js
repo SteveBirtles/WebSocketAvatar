@@ -72,6 +72,22 @@ function processInputs() {
                 document.getElementById("newentity").style.display = "block";
                 document.getElementById("spawn").focus();
 
+                if (recentScripts.length > 0) {
+                    let optionsHTML = '';
+                    for (let i = recentScripts.length-1; i >=0 ; i--) {
+                        optionsHTML += (`<option value=${i}>${recentScripts[i].spawn.substring(0, 30) + "... / " + recentScripts[i].script.substring(0, 30) + "..."}</option>`);
+                    }
+                    let options = document.getElementById("recentScripts");
+                    options.style.display = "block";
+                    options.innerHTML = optionsHTML;
+                    options.addEventListener("change", function(event) {
+                        document.getElementById("spawn").value = recentScripts[event.target.value].spawn;
+                        document.getElementById("script").value = recentScripts[event.target.value].script;
+                    });
+                } else {
+                    document.getElementById("recentScripts").style.display = "none";
+                }
+
                 let lastSpawn = localStorage.getItem("lastSpawn")
                 if (lastSpawn !== undefined && lastSpawn !== null) {
                     document.getElementById("spawn").value = lastSpawn;
@@ -79,7 +95,7 @@ function processInputs() {
 
                 let lastScript = localStorage.getItem("lastScript")
                 if (lastScript !== undefined && lastScript !== null) {
-                    document.getElementById("script").value = lastScript;                    
+                    document.getElementById("script").value = lastScript;
                 }
 
             }

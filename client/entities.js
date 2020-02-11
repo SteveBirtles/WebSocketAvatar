@@ -91,7 +91,7 @@ function passableTile(x, y) {
 
     for (let id of Object.keys(entities)) {
         if (!entities[id].solid) continue;
-        if (endX === entities[id].targetX && endY === entities[id].targetY) return false;
+        if (x === entities[id].targetX && y === entities[id].targetY) return false;
     }
 
     if (tileMap[x][y].length <= 1) return true;

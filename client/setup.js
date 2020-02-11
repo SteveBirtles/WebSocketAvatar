@@ -7,6 +7,7 @@ const MAP_SIZE = 128;
 const TILE_SOURCE_SIZE = 64;
 
 let selectedAvatar;
+let recentScripts = [];
 
 function pageLoad() {
 
@@ -167,6 +168,11 @@ function joinGame() {
 
     fixSize();
     window.addEventListener("resize", fixSize);
+
+    let recentScriptsJSON = localStorage.getItem("recentScripts");
+    if (recentScriptsJSON !== undefined && recentScriptsJSON !== null) {
+        recentScripts = JSON.parse(recentScriptsJSON);
+    }    
 
     console.log("*** Requesting animation frame... ***");
     window.requestAnimationFrame(gameFrame);

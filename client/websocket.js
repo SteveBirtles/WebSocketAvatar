@@ -28,6 +28,17 @@ function newEntity() {
     localStorage.setItem("lastSpawn", data.spawn);
     localStorage.setItem("lastScript", data.script);
 
+    let duplicate = false;
+    for (let recent of recentScripts) {
+        if (recent.spawn === data.spawn && recent.script === data.script) {
+            duplicate = true;
+            break;
+        }
+    }
+    if (!duplicate) recentScripts.push(data);
+    localStorage.setItem("recentScripts", JSON.stringify(recentScripts));
+
+
     document.getElementById("newentity").style.display = "none";
     pressedKeys = {};
     scripting = false;
@@ -59,9 +70,11 @@ function receiveMessage(event) {
         if (data.hasOwnProperty("x")) entities[data.id].targetX = data.x;
         if (data.hasOwnProperty("y")) entities[data.id].targetY = data.y;
         if (data.hasOwnProperty("t")) entities[data.id].targetT = data.t;
+        if (data.hasOwnProperty("solid")) entities[data.id].solid = data.solid;
 
         if (data.hasOwnProperty("chat")) entities[data.id].chat = data.chat;
         if (data.hasOwnProperty("chattime")) entities[data.id].chattime = data.chattime;
+        if (data.hasOwnProperty("error")) entities[data.id].error = data.error;
 
         if (data.hasOwnProperty("image")) {
             if (entities[data.id].image === undefined && data.id === myId) {

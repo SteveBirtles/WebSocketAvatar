@@ -98,6 +98,14 @@ h1 {
     height: 400px;
 }
 
+#recentScripts {
+    font-size: 16pt;
+    margin: 16px;
+    background-color: cornflowerblue;
+    width: 768px;
+    font-family: monospace;
+}
+
 #newentitybutton {
     margin-top: 8px;
     font-size: 24px;

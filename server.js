@@ -4,6 +4,7 @@ const BASE_TILE = 0;
 
 const avatarScript = null;
 const chatLifespan = 5000;
+const MAX_PATH_LENGTH = 1000;
 
 const express = require('express');
 const http = require('http');
@@ -74,12 +75,14 @@ server.listen(port, function(){
       for (let id of Object.keys(entities)) {
           let entity = entities[id];
 
-          if (entity.script !== undefined && entity.script !== null && entity.script !== "") {
+          if (entity.ready && entity.script !== undefined && entity.script !== null && entity.script !== "") {
               try {
                   //console.log(">>> RUNNING: " + entity.script);
                    entities[entity.id].vm.run(entity.script);
                } catch (vmError) {
-                   console.log(">>> VM ERROR: " + vmError.message);
+                   let entityUpdate = {id, error: vmError.message};
+                   sendUpdate(entityUpdate, wsServer.clients);
+                   entity.script = null;
                }
            }
 
@@ -158,9 +161,11 @@ wsServer.on('connection', client => {
               if (data.spawn !== "") {
                   try {
                       //console.log(">>> SPAWNING: " + data.spawn);
-                       entities[n.id].vm.run(data.spawn);
+                      entities[n.id].vm.run(data.spawn);
+                      entities[n.id].ready = true;
                    } catch (vmError) {
-                       console.log(">>> VM ERROR: " + vmError.message);
+                       let entityUpdate = {id: n.id, error: vmError.message};
+                       sendUpdate(entityUpdate, wsServer.clients);
                    }
                }
 
@@ -242,20 +247,20 @@ wsServer.on('connection', client => {
                   entities[client.id].y < 1 ||
                   entities[client.id].y > MAP_SIZE-1) reset = true;
 
-              if (tileMap[entities[client.id].x][entities[client.id].y].length > 1 && !(
+              if (entities[client.id].solid &&
+                  tileMap[entities[client.id].x][entities[client.id].y].length > 1 && !(
                   tileMap[entities[client.id].x][entities[client.id].y].length >= 3 &&
                   tileMap[entities[client.id].x][entities[client.id].y][1] === null &&
                   tileMap[entities[client.id].x][entities[client.id].y][2] === null)) reset = true;
 
               let d = Math.sqrt(Math.pow(lastX - entities[client.id].x, 2) + Math.pow(lastY - entities[client.id].y, 2));
-              if (d >= 2) {
-                console.log("Toooooo fast!");
-                reset = true;
-              }
+              if (d >= 2) reset = true;
 
-              for (let id of Object.keys(entities)) {
-                  if (id === String(client.id)) continue;
-                  if (entities[id].x === entities[client.id].x && entities[id].y === entities[client.id].y) reset = true;
+              if (entities[client.id].solid) {
+                  for (let id of Object.keys(entities)) {
+                      if (id === String(client.id)) continue;
+                      if (entities[id].x === entities[client.id].x && entities[id].y === entities[client.id].y) reset = true;
+                  }
               }
 
               if (reset) {
@@ -307,7 +312,7 @@ wsServer.on('connection', client => {
 
         } catch(err) {
 
-          console.log("ERROR: " + err);
+          console.log("ERROR: " + err.stack);
 
         }
 
@@ -347,7 +352,7 @@ function newEntity(id, x, y, script) {
 
     return {
 
-        id, x, y, script,
+        id, x, y, script, ready:false,
 
         t: 0, chat: "", chattime: 0, moveTime: 200, flags: {}, solid: true, group: "",
 
@@ -369,7 +374,7 @@ function newEntity(id, x, y, script) {
                 }
             },
 
-            calculatePath: function(targetX, targetY) {
+            getPath: function(targetX, targetY) {
                 return calculatePath(entities[id].x, entities[id].y, targetX, targetY);
             },
 
@@ -510,9 +515,12 @@ function newEntity(id, x, y, script) {
 
 function passableTile(x, y) {
 
+    //console.log("passableTile (" + x + ", " + y + ")");
+
     for (let id of Object.keys(entities)) {
+        //console.log(entities[id]);
         if (!entities[id].solid) continue;
-        if (endX === entities[id].targetX && endY === entities[id].targetY) return false;
+        if (x === entities[id].targetX && y === entities[id].targetY) return false;
     }
 
     if (tileMap[x][y].length <= 1) return true;
@@ -524,11 +532,19 @@ function passableTile(x, y) {
 
 function calculatePath(startX, startY, endX, endY) {
 
+    //console.log("PATH: " + startX + ", " + startY + " --> " + endX + ", " + endY + " (" + MAX_PATH_LENGTH + ")")
+
     let nodes = [];
 
-    if (endX < 1 || endY < 1 || endX > MAP_SIZE-1 || endY > MAP_SIZE-1) return [];
+    if (endX < 1 || endY < 1 || endX > MAP_SIZE-1 || endY > MAP_SIZE-1) {
+        //console.log("END OUTSIDE MAP");
+        return [];
+    }
 
-    if (!passableTile(endX, endY)) return [];
+    if (!passableTile(endX, endY)) {
+        //console.log("END NO GOOD");
+        return [];
+    }
 
     let adjacencies = [{x: 0, y:-1, g:10}, {x:  1, y:-1, g:14}, {x: 1, y:0, g:10}, {x: 1, y: 1, g:14},
                        {x: 0, y: 1, g:10}, {x: -1, y: 1, g:14}, {x:-1, y:0, g:10}, {x:-1, y:-1, g:14}];
@@ -539,8 +555,12 @@ function calculatePath(startX, startY, endX, endY) {
 
     nodes = [{x:startX, y:startY, g:0, h:d, f:d, from: null, done: false, n:0}];
 
+    //console.log("READY, SET...");
+
     search:
     for (let n = 1; n <= MAX_PATH_LENGTH; n++) {
+
+        //console.log("..." + n);
 
         let current;
         let bestF = 999999;
@@ -554,6 +574,8 @@ function calculatePath(startX, startY, endX, endY) {
 
         adjs:
         for (let adj of adjacencies) {
+
+            //console.log(adj);
 
             let x = current.x + adj.x;
             let y = current.y + adj.y;
@@ -588,6 +610,9 @@ function calculatePath(startX, startY, endX, endY) {
             nodes.push({x, y, g, h, f:g+h, from: current, done: false, n});
 
             if (x === endX && y === endY) {
+
+                //console.log("!END!");
+
                 let path = [];
                 let node = nodes.pop();
                 while (node != null) {
@@ -603,6 +628,7 @@ function calculatePath(startX, startY, endX, endY) {
 
     }
 
+    //console.log("!FAIL!");
     return [];
 
 }

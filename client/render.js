@@ -23,7 +23,7 @@ function renderWorld(context) {
 
             renderGroundStrip(context, y);
 
-            renderEntitieStrip(context, y);
+            renderEntityStrip(context, y);
 
             renderFrontStrip(context, y);
 
@@ -178,7 +178,7 @@ function renderGroundStrip(context, y) {
 
 }
 
-function renderEntitieStrip(context, y) {
+function renderEntityStrip(context, y) {
 
     if (!(xRay && (chatting || scripting || showTiles)) && y < Math.floor(cameraY) + h/48 + 1) {
 
@@ -191,17 +191,44 @@ function renderEntitieStrip(context, y) {
 
                         if (entity.currentY*48-128 - cameraY*48 > h) continue;
 
-                        context.globalAlpha = 0.25;
-                        context.drawImage(shadow, 0,0,256,256,entity.currentX*64 - cameraX*64 - 32, entity.currentY*48 - cameraY*48 - 24, 64, 48);
-                        context.globalAlpha = 1;
 
-                        if (entity.image.height === 128) {
-                            context.drawImage(entity.image, entity.currentX*64-32 - cameraX*64, entity.currentY*48-128 - cameraY*48);
+                        if (xRay) {
+
+                            if (entity.name !== undefined) {
+                                context.fillStyle = 'white';
+                            } else {
+                                context.fillStyle = 'cyan';
+                            }
+                            context.beginPath();
+                            context.ellipse(entity.currentX*64 - cameraX*64, entity.currentY*48 - cameraY*48, 32, 24, 0, 0, 2*Math.PI);
+                            context.fill();
+
                         } else {
-                            context.drawImage(entity.image, entity.currentX*64-32 - cameraX*64, entity.currentY*48-64 - cameraY*48);
+
+                            context.globalAlpha = 0.25;
+                            context.drawImage(shadow, 0,0,256,256,entity.currentX*64 - cameraX*64 - 32, entity.currentY*48 - cameraY*48 - 24, 64, 48);
+                            context.globalAlpha = 1;
+
+                            if (entity.image.height === 128) {
+                                context.drawImage(entity.image, entity.currentX*64-32 - cameraX*64, entity.currentY*48-128 - cameraY*48);
+                            } else {
+                                context.drawImage(entity.image, entity.currentX*64-32 - cameraX*64, entity.currentY*48-64 - cameraY*48);
+                            }
                         }
 
-                        if (entity.chattime !== undefined && entity.chattime > worldTime) {
+                        if (entity.error !== undefined && entity.error !== null) {
+
+                            context.fillStyle = 'red';
+                            context.font = 'bold 24px Arial';
+                            context.textAlign = 'center';
+
+                            if (entity.image.height === 128) {
+                                context.fillText(entity.error, entity.currentX*64 - cameraX*64, entity.currentY*48-128 - cameraY*48);
+                            } else {
+                                context.fillText(entity.error, entity.currentX*64 - cameraX*64, entity.currentY*48-64 - cameraY*48);
+                            }
+
+                        } else if (entity.chattime !== undefined && entity.chattime > worldTime) {
 
                             context.fillStyle = 'white';
                             context.font = 'bold 24px Arial';
