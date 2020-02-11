@@ -1,9 +1,7 @@
 const MAP_SIZE = 128;
 const MAP_FILE = "map.json";
 const BASE_TILE = 0;
-
-const avatarScript = null;
-const chatLifespan = 5000;
+const CHAT_LIFE = 5000;
 const MAX_PATH_LENGTH = 1000;
 
 const express = require('express');
@@ -189,7 +187,7 @@ wsServer.on('connection', client => {
         let y = Math.floor(MAP_SIZE/2 + Math.random() * 8 - 4);
         if (tileMap[x][y].length === 1 || tries == 99) {
             if (tries === 99) console.log("100 tries to place new user!");
-            entities[client.id] = newEntity(client.id, x, y, avatarScript);
+            entities[client.id] = newEntity(client.id, x, y, null);
             break;
         }
     }
@@ -354,7 +352,7 @@ wsServer.on('connection', client => {
               if (data.hasOwnProperty("chat")) {
 
                   if (data.chat.length > 64) data.chat = data.chat.subString(0, 64);
-                  let t = Date.now() - serverStartTime + chatLifespan;
+                  let t = Date.now() - serverStartTime + CHAT_LIFE;
 
                   entities[client.id].chat = data.chat;
                   entities[client.id].chattime = t;
@@ -585,7 +583,7 @@ function newVM(id) {
 
         say: function(text) {
             entities[id].chat = text;
-            entities[id].chattime = (Date.now() - serverStartTime) + chatLifespan;
+            entities[id].chattime = (Date.now() - serverStartTime) + CHAT_LIFE;
             sendUpdate({id, chat: entities[id].chat, chattime: entities[id].chattime}, wsServer.clients);
         },
 

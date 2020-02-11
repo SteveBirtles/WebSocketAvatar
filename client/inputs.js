@@ -197,11 +197,15 @@ function processInputs() {
                             if (mode === NULL_MODE) {
                                 pendingTileChanges.push({x: x, y: y-1, tile: -2});
                             } else if (mode === DELETE_MODE) {
-                                pendingTileChanges.push({x: x, y: y-1, tile: -1});
+                                if (tileMap[x][y-1].length > 1) {
+                                  pendingTileChanges.push({x: x, y: y-1, tile: -1});
+                                }
                             } else if (mode === PICK_MODE) {
                                 if (tileMap[x][y-1].length > 0) {
-                                    selectedTile = tileMap[x][y-1][tileMap[x][y-1].length - 1];
-                                    mode = NORMAL_MODE;
+                                    if (tileMap[x][y-1][tileMap[x][y-1].length - 1] !== null) {
+                                      selectedTile = tileMap[x][y-1][tileMap[x][y-1].length - 1];
+                                      mode = NORMAL_MODE;
+                                    }
                                 }
                             } else if (mode === EXCAVATE_MODE) {
                                 if (tileMap[x][y-1].length > 2) {
@@ -223,11 +227,15 @@ function processInputs() {
                           if (mode === NULL_MODE) {
                               pendingTileChanges.push({x: x, y: y+1, tile: -2});
                           } else if (mode === DELETE_MODE) {
-                              pendingTileChanges.push({x: x, y: y+1, tile: -1});
+                              if (tileMap[x][y+1].length > 1) {
+                                pendingTileChanges.push({x: x, y: y+1, tile: -1});
+                              }
                           } else if (mode === PICK_MODE) {
                               if (tileMap[x][y+1].length > 0) {
-                                  selectedTile = tileMap[x][y+1][tileMap[x][y+1].length - 1];
-                                  mode = NORMAL_MODE;
+                                  if (tileMap[x][y+1][tileMap[x][y+1].length - 1] !== null) {
+                                    selectedTile = tileMap[x][y+1][tileMap[x][y+1].length - 1];
+                                    mode = NORMAL_MODE;
+                                  }
                               }
                           } else if (mode === EXCAVATE_MODE) {
                               if (tileMap[x][y+1].length > 2) {
@@ -249,11 +257,15 @@ function processInputs() {
                           if (mode === NULL_MODE) {
                               pendingTileChanges.push({x: x-1, y: y, tile: -2});
                           } else if (mode === DELETE_MODE) {
-                              pendingTileChanges.push({x: x-1, y: y, tile: -1});
+                              if (tileMap[x-1][y].length > 1) {
+                                pendingTileChanges.push({x: x-1, y: y, tile: -1});
+                              }
                           } else if (mode === PICK_MODE) {
                               if (tileMap[x-1][y].length > 0) {
-                                  selectedTile = tileMap[x-1][y][tileMap[x-1][y].length - 1];
-                                  mode = NORMAL_MODE;
+                                  if (tileMap[x-1][y][tileMap[x-1][y].length - 1] !== null) {
+                                    selectedTile = tileMap[x-1][y][tileMap[x-1][y].length - 1];
+                                    mode = NORMAL_MODE;
+                                  }
                               }
                           } else if (mode === EXCAVATE_MODE) {
                               if (tileMap[x-1][y].length > 2) {
@@ -275,11 +287,15 @@ function processInputs() {
                           if (mode === NULL_MODE) {
                               pendingTileChanges.push({x: x+1, y: y, tile: -2});
                           } else if (mode === DELETE_MODE) {
-                              pendingTileChanges.push({x: x+1, y: y, tile: -1});
+                              if (tileMap[x+1][y].length > 1) {
+                                  pendingTileChanges.push({x: x+1, y: y, tile: -1});
+                              }
                           } else if (mode === PICK_MODE) {
                               if (tileMap[x+1][y].length > 0) {
-                                  selectedTile = tileMap[x+1][y][tileMap[x+1][y].length - 1];
-                                  mode = NORMAL_MODE;
+                                  if (tileMap[x+1][y][tileMap[x+1][y].length - 1] !== null) {
+                                    selectedTile = tileMap[x+1][y][tileMap[x+1][y].length - 1];
+                                    mode = NORMAL_MODE;
+                                  }
                               }
                           } else if (mode === EXCAVATE_MODE) {
                               if (tileMap[x+1][y].length > 2) {
@@ -312,7 +328,7 @@ function processInputs() {
                           if (pressedKeys[" "]) z = 0;
                           if (mode === NULL_MODE) {
                               pendingTileChanges.push({x: x, y: y, tile: -2, z});
-                          } else if (mode === DELETE_MODE) {
+                          } else if (mode === DELETE_MODE && !pressedKeys[" "]) {
                               pendingTileChanges.push({x: x, y: y, tile: -1, z});
                           } else if (mode === PICK_MODE) {
                               if (tileMap[x][y].length > 0) {
@@ -334,7 +350,9 @@ function processInputs() {
                             if (mode === NULL_MODE) {
                                 pendingTileChanges.push({x: x, y: y, tile: -2});
                             } else if (mode === DELETE_MODE) {
-                                pendingTileChanges.push({x: x, y: y, tile: -1});
+                                if (tileMap[x][y].length > 1) {
+                                  pendingTileChanges.push({x: x, y: y, tile: -1});
+                                }
                             } else if (mode === PICK_MODE) {
                                 if (tileMap[x][y].length > 0) {
                                     if (tileMap[x][y][tileMap[x][y].length - 1] !== null) {
