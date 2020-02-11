@@ -153,7 +153,6 @@ wsServer.on('connection', client => {
 
               entityCount++;
               let n = {id: entityCount, x: entities[client.id].x, y: entities[client.id].y, solid: true};
-
               entities[n.id] = newEntity(n.id, n.x, n.y, data.script);
 
               sendUpdate(n, wsServer.clients);
@@ -168,6 +167,28 @@ wsServer.on('connection', client => {
                        sendUpdate(entityUpdate, wsServer.clients);
                    }
                }
+
+          } else if (data.hasOwnProperty("delete")) {
+
+              let isClient = false;
+              for (let c of wsServer.clients) {
+                  if (String(c.id) === data.delete) isClient = true;
+                  break;
+              }
+
+              if (!isClient) {
+
+                  for (let id of Object.keys(entities)) {
+                      if (id === String(data.delete)) {
+                          let deleteData = {delete: data.delete};
+                          for (let c of wsServer.clients) {
+                              c.send(JSON.stringify(deleteData));
+                          }
+                          delete entities[data.delete];
+                          break;
+                      }
+                  }
+              }
 
           } else if (data.hasOwnProperty("tile")) {
 
@@ -367,10 +388,19 @@ function newEntity(id, x, y, script) {
 
             move: function(dx, dy) {
                 if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1) {
-                    entities[id].x += dx;
-                    entities[id].y += dy;
-                    entities[id].t = Date.now() - serverStartTime + entities[id].moveTime;
-                    sendUpdate({id, x: entities[id].x, y: entities[id].y, t: entities[id].t}, wsServer.clients);
+
+                  let u = entities[id].x + dx;
+                  let v = entities[id].y + dy;
+
+                  if (u < 1 || v < 1 || u > MAP_SIZE-1 || v > MAP_SIZE-1) return;
+                  if (!passableTile(u, v)) return;
+
+                  entities[id].x = u;
+                  entities[id].y = v;
+
+                  entities[id].t = Date.now() - serverStartTime + entities[id].moveTime;
+                  sendUpdate({id, x: entities[id].x, y: entities[id].y, t: entities[id].t}, wsServer.clients);
+
                 }
             },
 
@@ -402,7 +432,16 @@ function newEntity(id, x, y, script) {
                     let e = entities[i];
                     let d = Math.sqrt(Math.pow(u - e.x, 2) + Math.pow(v - e.y, 2));
                     if (d <= radius) {
-                        list.push({id: i, x: e.x, y: e.y, speed: e.speed, name: e.name, group: e.group, image: e.image, solid: e.solid});
+                        list.push({
+                          id: i,
+                          x: e.x,
+                          y: e.y,
+                          speed: e.speed,
+                          name: e.name,
+                          group: e.group,
+                          image: e.image,
+                          solid: e.solid
+                        });
                     }
                 }
                 return list;
@@ -465,6 +504,7 @@ function newEntity(id, x, y, script) {
             },
 
             setSolid: function(solid) {
+                if (solid !== true && solid !== false) return;
                 entities[id].solid = solid;
             },
 
@@ -495,8 +535,34 @@ function newEntity(id, x, y, script) {
 
             say: function(text) {
                 entities[id].chat = text;
-                entities[id].chattime = Date.now() - serverStartTime + chatLifespan;
+                entities[id].chattime = (Date.now() - serverStartTime) + chatLifespan;
                 sendUpdate({id, chat: entities[id].chat, chattime: entities[id].chattime}, wsServer.clients);
+            },
+
+            spawn: function(dx, dy, s0, s) {
+              if (dx >= -2 && dy >= -2 && dx <= 2 && dy <= 2) {
+                  let u = entities[id].x + dx;
+                  let v = entities[id].y + dy;
+                  if (u >= 0 && v >= 0 && u <= MAP_SIZE && v <= MAP_SIZE) {
+
+                    entityCount++;
+                    let n = {id: entityCount, x: u, y: v, solid: true};
+                    entities[n.id] = newEntity(n.id, n.x, n.y, s);
+
+                    sendUpdate(n, wsServer.clients);
+
+                    if (s0 !== "") {
+                        try {
+                            entities[n.id].vm.run(s0);
+                            entities[n.id].ready = true;
+                         } catch (vmError) {
+                             let entityUpdate = {id: n.id, error: vmError.message};
+                             sendUpdate(entityUpdate, wsServer.clients);
+                         }
+                     }
+
+                  }
+                }
             },
 
             selfDestruct: function() {
@@ -515,10 +581,7 @@ function newEntity(id, x, y, script) {
 
 function passableTile(x, y) {
 
-    //console.log("passableTile (" + x + ", " + y + ")");
-
     for (let id of Object.keys(entities)) {
-        //console.log(entities[id]);
         if (!entities[id].solid) continue;
         if (x === entities[id].targetX && y === entities[id].targetY) return false;
     }
@@ -532,19 +595,10 @@ function passableTile(x, y) {
 
 function calculatePath(startX, startY, endX, endY) {
 
-    //console.log("PATH: " + startX + ", " + startY + " --> " + endX + ", " + endY + " (" + MAX_PATH_LENGTH + ")")
-
     let nodes = [];
 
-    if (endX < 1 || endY < 1 || endX > MAP_SIZE-1 || endY > MAP_SIZE-1) {
-        //console.log("END OUTSIDE MAP");
-        return [];
-    }
-
-    if (!passableTile(endX, endY)) {
-        //console.log("END NO GOOD");
-        return [];
-    }
+    if (endX < 1 || endY < 1 || endX > MAP_SIZE-1 || endY > MAP_SIZE-1) return [];
+    if (!passableTile(endX, endY)) return [];
 
     let adjacencies = [{x: 0, y:-1, g:10}, {x:  1, y:-1, g:14}, {x: 1, y:0, g:10}, {x: 1, y: 1, g:14},
                        {x: 0, y: 1, g:10}, {x: -1, y: 1, g:14}, {x:-1, y:0, g:10}, {x:-1, y:-1, g:14}];
@@ -555,12 +609,8 @@ function calculatePath(startX, startY, endX, endY) {
 
     nodes = [{x:startX, y:startY, g:0, h:d, f:d, from: null, done: false, n:0}];
 
-    //console.log("READY, SET...");
-
     search:
     for (let n = 1; n <= MAX_PATH_LENGTH; n++) {
-
-        //console.log("..." + n);
 
         let current;
         let bestF = 999999;
@@ -574,8 +624,6 @@ function calculatePath(startX, startY, endX, endY) {
 
         adjs:
         for (let adj of adjacencies) {
-
-            //console.log(adj);
 
             let x = current.x + adj.x;
             let y = current.y + adj.y;
@@ -611,8 +659,6 @@ function calculatePath(startX, startY, endX, endY) {
 
             if (x === endX && y === endY) {
 
-                //console.log("!END!");
-
                 let path = [];
                 let node = nodes.pop();
                 while (node != null) {
@@ -628,7 +674,6 @@ function calculatePath(startX, startY, endX, endY) {
 
     }
 
-    //console.log("!FAIL!");
     return [];
 
 }

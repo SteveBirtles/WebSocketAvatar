@@ -191,6 +191,14 @@ function renderEntityStrip(context, y) {
 
                         if (entity.currentY*48-128 - cameraY*48 > h) continue;
 
+                        if (entityToDelete === entity) {
+
+                            context.fillStyle = 'red';
+                            context.beginPath();
+                            context.ellipse(entity.currentX*64 - cameraX*64, entity.currentY*48 - cameraY*48, 32, 24, 0, 0, 2*Math.PI);
+                            context.fill();
+
+                        }
 
                         if (xRay) {
 

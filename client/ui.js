@@ -87,41 +87,93 @@ function drawTiles(context) {
 
 function drawControls(context) {
 
-    context.fillStyle = 'white';
-    context.textAlign = 'right';
-
     let s = 30;
 
-    context.font = 'bold 18px Arial';
-    context.fillText("Controls (H to hide)", w-10, s); s += 30;
+    if (scripting) {
 
-    context.font = '18px Arial';
-    context.fillText("Arrow keys - Move", w-10, s); s += 20;
-    context.fillText("Left Click - Path Move", w-10, s); s += 20;
-    context.fillText("C - Chat (Escape to cancel)", w-10, s); s += 20;
-    context.fillText("Enter - Place sign (Escape to cancel)", w-10, s); s += 30;
+      context.fillStyle = 'white';
+      context.textAlign = 'left';
 
-    context.fillText("Right Click - Place block (limited range)", w-10, s); s += 20;
-    context.fillText("WSAD - Place blocks adjacent", w-10, s); s += 20;
-    context.fillText("Space - Place floor tile", w-10, s); s += 20;
-    context.fillText("1-9 - Place blocks overhead", w-10, s); s += 30;
+      context.font = 'bold 20px Arial';
+      context.fillText("Script commands (plus all ordinary JavaScript)", 875, s); s += 80;
 
-    context.fillText("X or Delete - Delete mode", w-10, s); s += 20;
-    context.fillText("Z - Null mode", w-10, s); s += 20;
-    context.fillText("Q - Pick mode (Just one)", w-10, s); s += 20;
-    context.fillText("E - Excavate mode", w-10, s); s += 20;
-    context.fillText("R - Refill mode", w-10, s); s += 20;
-    context.fillText("Escape - Normal mode", w-10, s); s += 20;
-    context.fillText("Middle click or \\ (Hold) & Mouse - Mode chooser", w-10, s); s += 30;
+      context.fillStyle = 'cyan';
+      context.font = '20px monospace';
+      context.fillText("getPosition()		                              // returns {x, y}", 875, s); s += 30;
+      context.fillText("move(dx, dy)		                               // dx and dy are -1, 0 or +1", 875, s); s += 40;
 
-    context.fillText("T (Hold) & Mouse or PageUp / PageDown - Select block tile", w-10, s); s += 20;
-    context.fillText("Shift (Hold) - X-Ray mode", w-10, s); s += 30;
+      context.fillText("moved()			                                   // Returns true if last move has completed", 875, s); s += 40;
 
-    context.fillText("M (Hold) - Show mini map", w-10, s); s += 20;
-    context.fillText("K - Toggle mouse controllable camera", w-10, s); s += 30;
+      context.fillText("getSpeed()", 875, s); s += 30;
+      context.fillText("setSpeed(speed)                              // 0.1 up to 10", 875, s); s += 40;
 
-    context.textAlign = 'center';
-    context.fillText(mouseX + ", " + mouseY, mousePosition.x, mousePosition.y);
+      context.fillText("getPath(x, y)                                // Returns a list of {x, y}", 875, s); s += 40;
+
+      context.fillText("listNearby(radius)	                          // Returns a list of entities", 875, s); s += 30;
+      context.fillText("worldTime()", 875, s); s += 40;
+
+      context.fillText("setImage(image)	                             // image's CSS id", 875, s); s += 30;
+      context.fillText("getImage()", 875, s); s += 40;
+
+      context.fillText("getFlag(flag)", 875, s); s += 30;
+      context.fillText("setFlag(flag, value)", 875, s); s += 40;
+
+      context.fillText("getStack(dx, dy)			                          // dx and dy are -2, -1, 0, +1, +2", 875, s); s += 30;
+      context.fillText("setStack(dx, dy, stack)                      // Stack must be a list of numbers and/or nulls", 875, s); s += 40;
+
+      context.fillText("setSolid(solidity)		                         // true or false", 875, s); s += 40;
+
+      context.fillText("setGroup(group)", 875, s); s += 30;
+      context.fillText("getGroup()", 875, s); s += 40;
+
+      context.fillText("getGroupFlag(flag)", 875, s); s += 30;
+      context.fillText("setGroupFlag(flag, value)", 875, s); s += 40;
+
+      context.fillText("say(text)", 875, s); s += 40;
+
+      context.fillText("spawn(dx, dy, spawnScript, frameScript)      // Use backticks for long strings", 875, s); s += 30;
+      context.fillText("selfDestruct()", 875, s); s += 40;
+
+    } else {
+
+      context.fillStyle = 'white';
+      context.textAlign = 'right';
+
+      context.font = 'bold 18px Arial';
+      context.fillText("Controls (H to hide)", w-10, s); s += 30;
+
+      context.font = '18px Arial';
+      context.fillText("Arrow keys - Move", w-10, s); s += 20;
+      context.fillText("Left Click - Path Move", w-10, s); s += 20;
+      context.fillText("C - Chat (Escape to cancel)", w-10, s); s += 20;
+      context.fillText("Enter - Place sign (Escape to cancel)", w-10, s); s += 30;
+
+      context.fillText("Right Click - Place block (limited range)", w-10, s); s += 20;
+      context.fillText("WSAD - Place blocks adjacent", w-10, s); s += 20;
+      context.fillText("Space - Place floor tile", w-10, s); s += 20;
+      context.fillText("1-9 - Place blocks overhead", w-10, s); s += 30;
+
+      context.fillText("X or Delete - Delete mode", w-10, s); s += 20;
+      context.fillText("Z - Null mode", w-10, s); s += 20;
+      context.fillText("Q - Pick mode (Just one)", w-10, s); s += 20;
+      context.fillText("E - Excavate mode", w-10, s); s += 20;
+      context.fillText("R - Refill mode", w-10, s); s += 20;
+      context.fillText("Escape - Normal mode", w-10, s); s += 20;
+      context.fillText("Middle click or \\ (Hold) & Mouse - Mode chooser", w-10, s); s += 30;
+
+      context.fillText("Backspace - Select nearest entity", w-10, s); s += 20;
+      context.fillText("Y - Delete selected entity (if allowed)", w-10, s); s += 30;
+
+      context.fillText("T (Hold) & Mouse or PageUp / PageDown - Select block tile", w-10, s); s += 20;
+      context.fillText("Shift (Hold) - X-Ray mode", w-10, s); s += 30;
+
+      context.fillText("M (Hold) - Show mini map", w-10, s); s += 20;
+      context.fillText("K - Toggle mouse controllable camera", w-10, s); s += 30;
+
+      context.textAlign = 'center';
+      context.fillText(mouseX + ", " + mouseY, mousePosition.x, mousePosition.y);
+
+  }
 
 }
 

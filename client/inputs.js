@@ -9,6 +9,7 @@ let myPath = [];
 let chatting = false, modeChooser = false, scripting = false;
 let xRay = false, miniMap = false, cameraMouse = false;
 let pendingTileChanges = [];
+let entityToDelete = null;
 const moveTime = 200;
 
 const NORMAL_MODE = 0;
@@ -126,18 +127,21 @@ function processInputs() {
 
           }
 
-            if (chatting && pressedKeys["Escape"]) {
-                document.getElementById("chat").style.display = "none";
-                chatting = false;
-            }
+          if (entityToDelete !== null && pressedKeys["Escape"]) {
+              entityToDelete = null;
+          }
 
-            if (scripting && pressedKeys["Escape"]) {
-                document.getElementById("newentity").style.display = "none";
-                scripting = false;
-            }
+          if (chatting && pressedKeys["Escape"]) {
+              document.getElementById("chat").style.display = "none";
+              chatting = false;
+          }
 
+          if (scripting && pressedKeys["Escape"]) {
+              document.getElementById("newentity").style.display = "none";
+              scripting = false;
+          }
 
-            if (!(chatting || scripting || showTiles)) {
+          if (!(chatting || scripting || showTiles)) {
 
                 xRay = pressedKeys["Shift"];
                 miniMap = pressedKeys["m"];
@@ -354,6 +358,41 @@ function processInputs() {
                         if (!blockPlace) {
                           selectedTile += 1;
                           if (selectedTile >= tiles.length-1) selectedTile = 0;
+                        }
+                        blockPlace = true;
+                    } else if (pressedKeys["Backspace"]) {
+                        if (!blockPlace) {
+
+                            let bestD = Infinity;
+                            let bestE = null;
+
+                            for (let id of Object.keys(entities)) {
+                                if (id === String(myId)) continue;
+                                let d = Math.pow(entities[myId].targetX - entities[id].targetX, 2) + Math.pow(entities[myId].targetY - entities[id].targetY, 2);
+                                if (d < bestD) {
+                                    bestE = id;
+                                    bestD = d;
+                                }
+                            }
+
+                            if (bestE !== null) {
+                                 entityToDelete = entities[bestE];
+                            } else {
+                                 entityToDelete = null;
+                            }
+
+                        }
+                        blockPlace = true;
+                    } else if ((pressedKeys["y"] || pressedKeys["Y"]) && entityToDelete !== null) {
+                        if (!blockPlace) {
+                            for (let id of Object.keys(entities)) {
+                                if (entityToDelete === entities[id]) {
+                                    let data = {delete: id};
+                                    connection.send(JSON.stringify(data));
+                                    break;
+                                }
+                            }
+                            entityToDelete = null;
                         }
                         blockPlace = true;
                     } else {
