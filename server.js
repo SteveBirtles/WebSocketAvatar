@@ -232,7 +232,7 @@ wsServer.on('connection', client => {
 
               let isClient = false;
               for (let c of wsServer.clients) {
-                  if (String(c.id) === data.delete) isClient = true;
+                  if (String(c.id) === String(data.delete)) isClient = true;
                   break;
               }
 
