@@ -168,6 +168,10 @@ function drawControls(context) {
       context.fillText("M (Hold) - Show mini map", w-10, s); s += 20;
       context.fillText("K - Toggle mouse controllable camera", w-10, s); s += 30;
 
+      context.fillStyle = 'yellow';
+      s += 50;
+      context.fillText("Entities: " + Object.keys(entities).length, w-10, s); s += 30;
+
       context.textAlign = 'center';
       context.fillText(mouseX + ", " + mouseY, mousePosition.x, mousePosition.y);
 

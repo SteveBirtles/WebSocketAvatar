@@ -4,6 +4,8 @@ const BASE_TILE = 0;
 const CHAT_LIFE = 5000;
 const MAX_PATH_LENGTH = 1000;
 const DEBUG = false;
+const MAP_ONLY = false;
+const SPAWN_LIMITER = 10000;
 
 const express = require('express');
 const http = require('http');
@@ -21,6 +23,7 @@ let entityCount = 0;
 let entities = {};
 let tileMap = [];
 let groupFlags = {};
+let lastSpawnTime = {};
 
 if (fs.existsSync(MAP_FILE)) {
 
@@ -31,7 +34,7 @@ if (fs.existsSync(MAP_FILE)) {
         let rawData = JSON.parse(raw);
         if (Array.isArray(rawData)) tileMap = rawData; //Compatibility
         if (rawData.hasOwnProperty("tileMap")) tileMap = rawData.tileMap;
-        if (rawData.hasOwnProperty("entities")) {
+        if (rawData.hasOwnProperty("entities") && !MAP_ONLY) {
             rawEntities = rawData.entities;
 
             let id = 0;
@@ -60,7 +63,7 @@ if (fs.existsSync(MAP_FILE)) {
             entityCount = id;
 
         }
-        if (rawData.hasOwnProperty("groupFlags")) groupFlags = rawData.groupFlags;
+        if (rawData.hasOwnProperty("groupFlags") && !MAP_ONLY) groupFlags = rawData.groupFlags;
 
     });
 
@@ -208,6 +211,10 @@ wsServer.on('connection', client => {
 
           if (data.hasOwnProperty("spawn")) {
 
+              let now = (Date.now() - serverStartTime);
+              if (lastSpawnTime[client.id] !== undefined && lastSpawnTime[client.id] + SPAWN_LIMITER > now) return;
+              lastSpawnTime[client.id] = now;
+
               entityCount++;
               let n = {id: entityCount, x: entities[client.id].x, y: entities[client.id].y, solid: true};
               entities[n.id] = newEntity(n.id, n.x, n.y, data.script);
@@ -232,8 +239,9 @@ wsServer.on('connection', client => {
 
               let isClient = false;
               for (let c of wsServer.clients) {
-                  if (String(c.id) === String(data.delete)) isClient = true;
-                  break;
+                  if (String(c.id) === String(data.delete)) {
+                    isClient = true;
+                  }
               }
 
               if (!isClient) {
@@ -601,6 +609,11 @@ function newVM(id) {
         },
 
         spawn: function(dx, dy, s0, s) {
+
+          let now = (Date.now() - serverStartTime);
+          if (lastSpawnTime[id] !== undefined && lastSpawnTime[id] + SPAWN_LIMITER > now) return;
+          lastSpawnTime[id] = now;
+
           if (dx >= -2 && dy >= -2 && dx <= 2 && dy <= 2) {
               let u = entities[id].x + dx;
               let v = entities[id].y + dy;
