@@ -195,6 +195,7 @@ function joinGame() {
     if (recentScriptsJSON !== undefined && recentScriptsJSON !== null) {
         recentScripts = JSON.parse(recentScriptsJSON);
     }
+    addDemoScripts();
 
     console.log("*** Requesting animation frame... ***");
     window.requestAnimationFrame(gameFrame);
