@@ -340,9 +340,9 @@ wsServer.on('connection', client => {
                   if (tileMap[u][v].length > 1 && !(
                       tileMap[u][v].length >= 3 &&
                       tileMap[u][v][1] === null &&
-                      tileMap[u][v][2] === null)) reset = true;
-                  if (u !== lastX && !passableTile(lastX, v, client.id)) reset = true;
-                  if (v !== lastY && !passableTile(u, lastY, client.id)) reset = true;
+                      tileMap[u][v][2] === null)) reszet = true;
+                  if (u !== lastX && !passableTile(u, lastY, client.id)) reset = true;
+                  if (v !== lastY && !passableTile(lastX, v, client.id)) reset = true;
                   if (!passableTile(u, v, client.id)) reset = true;
               }
 
